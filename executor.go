@@ -129,5 +129,14 @@ func (e *executor) SelectOne(table string, record interface{}, where string, arg
 }
 
 func (e *executor) Delete(table string, where string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+	var buf bytes.Buffer
+	buf.WriteString("delete from ")
+	buf.WriteString(table)
+	if len(where) > 0 {
+		buf.WriteString(" where ")
+		buf.WriteString(where)
+	}
+	query := buf.String()
+	gox.LogInfo(query, args)
+	return e.se.Exec(query, args...)
 }
