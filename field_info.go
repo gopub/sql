@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var bytesType = reflect.TypeOf([]byte(nil))
+
 type fieldInfo struct {
 	indexes []int
 	names   []string
@@ -21,6 +23,16 @@ func getFieldInfo(typ reflect.Type) *fieldInfo {
 		strs := strings.Split(ft.Tag.Get("db"), ",")
 		if strs[0] == "-" {
 			continue
+		}
+
+		switch ft.Type.Kind() {
+		case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
+			break
+		default:
+			if !ft.Type.ConvertibleTo(bytesType) {
+				panic("invalid type: db column " + ft.Name + ":" + ft.Type.String())
+			}
 		}
 
 		name := ft.Name
