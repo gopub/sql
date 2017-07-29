@@ -20,10 +20,32 @@ func NewDB(db *sql.DB) *DB {
 	}
 }
 
-func (d *DB) CreateTable(table string, schema interface{}) error {
-	return nil
+func (d *DB) RawDB() *sql.DB {
+	return d.db
 }
 
-func (d *DB) MustCreateTable(table string, schema interface{}) {
+func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return d.db.Exec(query, args...)
+}
 
+func (d *DB) MustExec(query string, args ...interface{}) {
+	_, err := d.db.Exec(query, args...)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (d *DB) Begin() (*Tx, error) {
+	tx, err := d.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tx{
+		tx: tx,
+		executor: &executor{
+			se:              tx,
+			typeToFieldInfo: d.executor.typeToFieldInfo,
+		},
+	}, nil
 }

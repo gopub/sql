@@ -59,7 +59,18 @@ func (e *executor) getFieldValues(i interface{}) ([]string, []interface{}) {
 	return columns, values
 }
 
-func (e *executor) insert(table string, columns []string, values []interface{}) (sql.Result, error) {
+func (e *executor) Insert(table string, record interface{}) (sql.Result, error) {
+	var columns []string
+	var values []interface{}
+	if m, ok := record.(map[string]interface{}); ok {
+		for k, v := range m {
+			columns = append(columns, k)
+			values = append(values, v)
+		}
+	} else {
+		columns, values = e.getFieldValues(record)
+	}
+
 	var buf bytes.Buffer
 	buf.WriteString("insert into ")
 	buf.WriteString(table)
@@ -74,7 +85,7 @@ func (e *executor) insert(table string, columns []string, values []interface{}) 
 	return e.se.Exec(query, values...)
 }
 
-func (e *executor) Insert(table string, record interface{}) (sql.Result, error) {
+func (e *executor) Update(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
 	var columns []string
 	var values []interface{}
 	if m, ok := record.(map[string]interface{}); ok {
@@ -85,11 +96,24 @@ func (e *executor) Insert(table string, record interface{}) (sql.Result, error) 
 	} else {
 		columns, values = e.getFieldValues(record)
 	}
-	return e.insert(table, columns, values)
-}
 
-func (e *executor) Update(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+	var buf bytes.Buffer
+	buf.WriteString("update ")
+	buf.WriteString(table)
+	buf.WriteString(" set ")
+	for _, c := range columns {
+		buf.WriteString(c)
+		buf.WriteString(" = ?,")
+	}
+	buf.Truncate(buf.Len() - 1)
+	if len(where) > 0 {
+		buf.WriteString(" where ")
+		buf.WriteString(where)
+	}
+	values = append(values, args...)
+	query := buf.String()
+	gox.LogInfo(query, values)
+	return e.se.Exec(query, values...)
 }
 
 func (e *executor) Upsert(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
