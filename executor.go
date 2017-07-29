@@ -116,8 +116,37 @@ func (e *executor) Update(table string, record interface{}, where string, args .
 	return e.se.Exec(query, values...)
 }
 
-func (e *executor) Upsert(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) {
+	var columns []string
+	var values []interface{}
+	if m, ok := record.(map[string]interface{}); ok {
+		for k, v := range m {
+			columns = append(columns, k)
+			values = append(values, v)
+		}
+	} else {
+		columns, values = e.getFieldValues(record)
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("insert into ")
+	buf.WriteString(table)
+	buf.WriteString("(")
+	buf.WriteString(strings.Join(columns, ","))
+	buf.WriteString(") values (")
+	buf.WriteString(strings.Repeat("?,", len(columns)))
+	buf.Truncate(buf.Len() - 1)
+	buf.WriteString(") on duplicate key set ")
+	for _, c := range columns {
+		buf.WriteString(c)
+		buf.WriteString(" = ?,")
+	}
+	buf.Truncate(buf.Len() - 1)
+
+	values = append(values, values...)
+	query := buf.String()
+	gox.LogInfo(query, values)
+	return e.se.Exec(query, values...)
 }
 
 func (e *executor) Select(table string, records interface{}, where string, args ...interface{}) (sql.Result, error) {
