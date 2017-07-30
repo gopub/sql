@@ -186,7 +186,6 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 	var buf bytes.Buffer
 	buf.WriteString("select ")
 	buf.WriteString(strings.Join(fi.names, ","))
-	buf.Truncate(buf.Len() - 1)
 	buf.WriteString(" from ")
 	buf.WriteString(table)
 	if len(where) > 0 {
@@ -210,7 +209,7 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 		elem := ptrToElem.Elem()
 		fields := make([]interface{}, len(fi.indexes))
 		for i, idx := range fi.indexes {
-			fields[i] = elem.Field(idx).Addr()
+			fields[i] = elem.Field(idx).Addr().Interface()
 		}
 
 		err = rows.Scan(fields...)
