@@ -14,7 +14,7 @@ func NewDB(db *sql.DB) *DB {
 	return &DB{
 		db: db,
 		executor: &executor{
-			se:              db,
+			exe:             db,
 			typeToFieldInfo: sync.Map{},
 		},
 	}
@@ -44,7 +44,7 @@ func (d *DB) Begin() (*Tx, error) {
 	return &Tx{
 		tx: tx,
 		executor: &executor{
-			se:              tx,
+			exe:             tx,
 			typeToFieldInfo: d.executor.typeToFieldInfo,
 		},
 	}, nil

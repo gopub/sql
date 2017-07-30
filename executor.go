@@ -16,7 +16,7 @@ type sqlExecutor interface {
 }
 
 type executor struct {
-	se              sqlExecutor
+	exe             sqlExecutor
 	typeToFieldInfo sync.Map //type:*fieldInfo
 }
 
@@ -82,7 +82,7 @@ func (e *executor) Insert(table string, record interface{}) (sql.Result, error) 
 	buf.WriteString(")")
 	query := buf.String()
 	gox.LogInfo(query, values)
-	return e.se.Exec(query, values...)
+	return e.exe.Exec(query, values...)
 }
 
 func (e *executor) Update(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
@@ -113,7 +113,7 @@ func (e *executor) Update(table string, record interface{}, where string, args .
 	values = append(values, args...)
 	query := buf.String()
 	gox.LogInfo(query, values)
-	return e.se.Exec(query, values...)
+	return e.exe.Exec(query, values...)
 }
 
 func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) {
@@ -146,7 +146,7 @@ func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) 
 	values = append(values, values...)
 	query := buf.String()
 	gox.LogInfo(query, values)
-	return e.se.Exec(query, values...)
+	return e.exe.Exec(query, values...)
 }
 
 func (e *executor) Select(table string, records interface{}, where string, args ...interface{}) (sql.Result, error) {
@@ -167,5 +167,5 @@ func (e *executor) Delete(table string, where string, args ...interface{}) (sql.
 	}
 	query := buf.String()
 	gox.LogInfo(query, args)
-	return e.se.Exec(query, args...)
+	return e.exe.Exec(query, args...)
 }
