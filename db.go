@@ -12,14 +12,20 @@ type DB struct {
 	*executor
 }
 
-func NewDB(db *sql.DB) *DB {
+func Open(driverName, dataSourceName string) (*DB, error) {
+	db, err := sql.Open(driverName, dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DB{
 		db: db,
 		executor: &executor{
 			exe:             db,
 			typeToFieldInfo: sync.Map{},
+			driverName:      driverName,
 		},
-	}
+	}, nil
 }
 
 func (d *DB) SQLDB() *sql.DB {

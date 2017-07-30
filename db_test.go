@@ -1,12 +1,12 @@
 package gosql
 
 import (
+	"database/sql"
 	_ "github.com/Go-SQL-Driver/MySQL"
 	"github.com/natande/gox"
 	"os"
 	"testing"
 	"time"
-	"database/sql"
 )
 
 var _testDB *DB
@@ -24,8 +24,11 @@ type readProduct struct {
 }
 
 func TestMain(m *testing.M) {
-	db := gox.OpenDB("localhost:3306", "root", "7815", "test")
-	_testDB = NewDB(db)
+	var err error
+	_testDB, err = Open("mysql", "root:7815@tcp(localhost:3306)/test")
+	if err != nil {
+		panic(err)
+	}
 	r := m.Run()
 	os.Exit(r)
 }

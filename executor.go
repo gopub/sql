@@ -18,6 +18,7 @@ type sqlExecutor interface {
 type executor struct {
 	exe             sqlExecutor
 	typeToFieldInfo sync.Map //type:*fieldInfo
+	driverName      string
 }
 
 func (e *executor) getFields(i interface{}) ([]string, []reflect.Value) {
@@ -117,6 +118,10 @@ func (e *executor) Update(table string, record interface{}, where string, args .
 }
 
 func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) {
+	if e.driverName != "mysql" {
+		panic("Upsert is only supported by mysql driver")
+	}
+
 	var columns []string
 	var values []interface{}
 	if m, ok := record.(map[string]interface{}); ok {
