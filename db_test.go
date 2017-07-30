@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"database/sql"
 )
 
 var _testDB *DB
@@ -63,7 +64,7 @@ func TestExecutor_Select(t *testing.T) {
 
 	{
 		var items []*readProduct
-		err := _testDB.Select("products", &items, "")
+		err := _testDB.Select("products", &items, "id>?", 1000)
 		if err != nil {
 			t.Error(err)
 			t.Failed()
@@ -80,7 +81,9 @@ func TestExecutor_SelectOne(t *testing.T) {
 		err := _testDB.SelectOne("products", &p, "")
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			if err != sql.ErrNoRows {
+				t.Failed()
+			}
 		}
 		t.Log(*p)
 	}
@@ -90,7 +93,9 @@ func TestExecutor_SelectOne(t *testing.T) {
 		err := _testDB.SelectOne("products", &p, "")
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			if err != sql.ErrNoRows {
+				t.Failed()
+			}
 		}
 		t.Log(p)
 	}
