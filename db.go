@@ -3,8 +3,8 @@ package gosql
 import (
 	"bytes"
 	"database/sql"
-	"sync"
 	"github.com/natande/gox"
+	"sync"
 )
 
 type DB struct {
@@ -22,7 +22,7 @@ func NewDB(db *sql.DB) *DB {
 	}
 }
 
-func (d *DB) RawDB() *sql.DB {
+func (d *DB) SQLDB() *sql.DB {
 	return d.db
 }
 

@@ -228,15 +228,51 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 }
 
 func (e *executor) SelectOne(table string, record interface{}, where string, args ...interface{}) error {
-	return nil
+	v := reflect.ValueOf(record)
+
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+
+	if v.Kind() == reflect.Ptr {
+		v.Set(reflect.New(v.Type().Elem()))
+		v = v.Elem()
+	}
+
+	if v.Type().Kind() != reflect.Struct {
+		panic("must be a pointer to struct")
+	}
+
+	if !v.CanSet() {
+		panic("cannot be set")
+	}
+
+	columns, fields := e.getFields(record)
+	var buf bytes.Buffer
+	buf.WriteString("SELECT ")
+	buf.WriteString(strings.Join(columns, ","))
+	buf.WriteString(" FROM ")
+	buf.WriteString(table)
+	if len(where) > 0 {
+		buf.WriteString(" WHERE ")
+		buf.WriteString(where)
+	}
+	query := buf.String()
+	gox.LogInfo(query, args)
+
+	fieldAddrs := make([]interface{}, len(fields))
+	for i, f := range fields {
+		fieldAddrs[i] = f.Addr().Interface()
+	}
+	return e.exe.QueryRow(query, args...).Scan(fieldAddrs...)
 }
 
 func (e *executor) Delete(table string, where string, args ...interface{}) (sql.Result, error) {
 	var buf bytes.Buffer
-	buf.WriteString("delete from ")
+	buf.WriteString("DELETE FROM ")
 	buf.WriteString(table)
 	if len(where) > 0 {
-		buf.WriteString(" where ")
+		buf.WriteString(" WHERE ")
 		buf.WriteString(where)
 	}
 	query := buf.String()

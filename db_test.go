@@ -73,3 +73,25 @@ func TestExecutor_Select(t *testing.T) {
 		}
 	}
 }
+
+func TestExecutor_SelectOne(t *testing.T) {
+	{
+		var p *readProduct
+		err := _testDB.SelectOne("products", &p, "")
+		if err != nil {
+			t.Error(err)
+			t.Failed()
+		}
+		t.Log(*p)
+	}
+
+	{
+		var p readProduct
+		err := _testDB.SelectOne("products", &p, "")
+		if err != nil {
+			t.Error(err)
+			t.Failed()
+		}
+		t.Log(p)
+	}
+}
