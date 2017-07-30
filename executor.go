@@ -149,12 +149,87 @@ func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) 
 	return e.exe.Exec(query, values...)
 }
 
-func (e *executor) Select(table string, records interface{}, where string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+func (e *executor) Select(table string, records interface{}, where string, args ...interface{}) error {
+	v := reflect.ValueOf(records)
+	if v.Kind() != reflect.Ptr {
+		panic("must be a pointer to slice")
+	}
+
+	if v.IsNil() && !v.CanSet() {
+		panic("cannot be set value")
+	}
+
+	sliceType := v.Type().Elem()
+	if sliceType.Kind() != reflect.Slice {
+		panic("must be a pointer to slice")
+	}
+
+	isPtr := false
+	elemType := sliceType.Elem()
+	if elemType.Kind() == reflect.Ptr {
+		elemType = elemType.Elem()
+		isPtr = true
+	}
+
+	if elemType.Kind() != reflect.Struct {
+		panic("slice element must be a struct or pointer to struct")
+	}
+
+	var fi *fieldInfo
+	if fv, ok := e.typeToFieldInfo.Load(elemType); ok {
+		fi = fv.(*fieldInfo)
+	} else {
+		fi = getFieldInfo(elemType)
+		e.typeToFieldInfo.Store(elemType, fi)
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("select ")
+	buf.WriteString(strings.Join(fi.names, ","))
+	buf.Truncate(buf.Len() - 1)
+	buf.WriteString(" from ")
+	buf.WriteString(table)
+	if len(where) > 0 {
+		buf.WriteString(" where ")
+		buf.WriteString(where)
+	}
+	query := buf.String()
+	gox.LogInfo(query, args)
+	rows, err := e.exe.Query(query, args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	if v.IsNil() {
+		v.Set(reflect.New(sliceType))
+	}
+	sliceValue := v.Elem()
+	for rows.Next() {
+		ptrToElem := reflect.New(elemType)
+		elem := ptrToElem.Elem()
+		fields := make([]interface{}, len(fi.indexes))
+		for i, idx := range fi.indexes {
+			fields[i] = elem.Field(idx).Addr()
+		}
+
+		err = rows.Scan(fields...)
+		if err != nil {
+			return err
+		}
+
+		if isPtr {
+			sliceValue = reflect.Append(sliceValue, ptrToElem)
+		} else {
+			sliceValue = reflect.Append(sliceValue, elem)
+		}
+	}
+	v.Elem().Set(sliceValue)
+	return nil
 }
 
-func (e *executor) SelectOne(table string, record interface{}, where string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+func (e *executor) SelectOne(table string, record interface{}, where string, args ...interface{}) error {
+	return nil
 }
 
 func (e *executor) Delete(table string, where string, args ...interface{}) (sql.Result, error) {
