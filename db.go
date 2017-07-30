@@ -1,8 +1,10 @@
 package gosql
 
 import (
+	"bytes"
 	"database/sql"
 	"sync"
+	"github.com/natande/gox"
 )
 
 type DB struct {
@@ -48,4 +50,24 @@ func (d *DB) Begin() (*Tx, error) {
 			typeToFieldInfo: d.executor.typeToFieldInfo,
 		},
 	}, nil
+}
+
+func (d *DB) Count(table string, where string, args ...interface{}) (int, error) {
+	var buf bytes.Buffer
+	buf.WriteString("SELECT COUNT(*) FROM ")
+	buf.WriteString(table)
+	if len(where) > 0 {
+		buf.WriteString(" WHERE ")
+		buf.WriteString(where)
+	}
+	query := buf.String()
+	gox.LogInfo(query, args)
+
+	var count int
+	err := d.db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

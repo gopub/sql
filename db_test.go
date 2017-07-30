@@ -17,8 +17,8 @@ type product struct {
 }
 
 type readProduct struct {
-	ID        int    `db:"id"`
-	Name      string `db:"name"`
+	ID   int    `db:"id"`
+	Name string `db:"name"`
 	//UpdatedAt int64  `db:"updated_at"`
 }
 
