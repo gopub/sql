@@ -1,6 +1,7 @@
 package gosql
 
 import (
+	"github.com/natande/gox"
 	"reflect"
 	"strings"
 )
@@ -35,9 +36,11 @@ func getFieldInfo(typ reflect.Type) *fieldInfo {
 			}
 		}
 
-		name := ft.Name
+		var name string
 		if len(strs[0]) > 0 {
 			name = strs[0]
+		} else {
+			name = gox.CamelToSnake(ft.Name)
 		}
 
 		info.indexes = append(info.indexes, i)
