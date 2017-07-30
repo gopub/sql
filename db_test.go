@@ -16,6 +16,12 @@ type product struct {
 	UpdatedAt int64  `db:"updated_at"`
 }
 
+type readProduct struct {
+	ID        int    `db:"id"`
+	Name      string `db:"name"`
+	//UpdatedAt int64  `db:"updated_at"`
+}
+
 func TestMain(m *testing.M) {
 	db := gox.OpenDB("localhost:3306", "root", "7815", "test")
 	_testDB = NewDB(db)
@@ -46,7 +52,7 @@ func TestExecutor_Insert(t *testing.T) {
 
 func TestExecutor_Select(t *testing.T) {
 	{
-		var items []product
+		var items []readProduct
 		err := _testDB.Select("products", &items, "")
 		if err != nil {
 			t.Error(err)
@@ -56,7 +62,7 @@ func TestExecutor_Select(t *testing.T) {
 	}
 
 	{
-		var items []*product
+		var items []*readProduct
 		err := _testDB.Select("products", &items, "")
 		if err != nil {
 			t.Error(err)

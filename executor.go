@@ -72,11 +72,11 @@ func (e *executor) Insert(table string, record interface{}) (sql.Result, error) 
 	}
 
 	var buf bytes.Buffer
-	buf.WriteString("insert into ")
+	buf.WriteString("INSERT INTO ")
 	buf.WriteString(table)
 	buf.WriteString("(")
 	buf.WriteString(strings.Join(columns, ","))
-	buf.WriteString(") values (")
+	buf.WriteString(") VALUES (")
 	buf.WriteString(strings.Repeat("?,", len(columns)))
 	buf.Truncate(buf.Len() - 1)
 	buf.WriteString(")")
@@ -98,16 +98,16 @@ func (e *executor) Update(table string, record interface{}, where string, args .
 	}
 
 	var buf bytes.Buffer
-	buf.WriteString("update ")
+	buf.WriteString("UPDATE ")
 	buf.WriteString(table)
-	buf.WriteString(" set ")
+	buf.WriteString(" SET ")
 	for _, c := range columns {
 		buf.WriteString(c)
 		buf.WriteString(" = ?,")
 	}
 	buf.Truncate(buf.Len() - 1)
 	if len(where) > 0 {
-		buf.WriteString(" where ")
+		buf.WriteString(" WHERE ")
 		buf.WriteString(where)
 	}
 	values = append(values, args...)
@@ -129,14 +129,14 @@ func (e *executor) Upsert(table string, record interface{}) (sql.Result, error) 
 	}
 
 	var buf bytes.Buffer
-	buf.WriteString("insert into ")
+	buf.WriteString("INSERT INTO ")
 	buf.WriteString(table)
 	buf.WriteString("(")
 	buf.WriteString(strings.Join(columns, ","))
-	buf.WriteString(") values (")
+	buf.WriteString(") VALUES (")
 	buf.WriteString(strings.Repeat("?,", len(columns)))
 	buf.Truncate(buf.Len() - 1)
-	buf.WriteString(") on duplicate key set ")
+	buf.WriteString(") ON DUPLICATE KEY UPDATE ")
 	for _, c := range columns {
 		buf.WriteString(c)
 		buf.WriteString(" = ?,")
@@ -184,12 +184,12 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 	}
 
 	var buf bytes.Buffer
-	buf.WriteString("select ")
+	buf.WriteString("SELECT ")
 	buf.WriteString(strings.Join(fi.names, ","))
-	buf.WriteString(" from ")
+	buf.WriteString(" FROM ")
 	buf.WriteString(table)
 	if len(where) > 0 {
-		buf.WriteString(" where ")
+		buf.WriteString(" WHERE ")
 		buf.WriteString(where)
 	}
 	query := buf.String()
