@@ -39,6 +39,10 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 			continue
 		}
 
+		if len(strs) > 3 {
+			panic("only support ${column_name},primary key,autoincrement")
+		}
+
 		switch ft.Type.Kind() {
 		case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
@@ -57,6 +61,9 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 			} else if str == "autoincrement" {
 				info.aiIndexes = append(info.aiIndexes, i)
 			} else if gox.IsVariable(str) {
+				if len(name) > 0 {
+					panic("duplicate column name: " + str)
+				}
 				name = str
 			} else {
 				gox.LogWarn("Unknown tag component:", str)
