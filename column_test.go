@@ -12,6 +12,6 @@ func Test_getFieldInfo(t *testing.T) {
 		Age  int    `db:"age"`
 	}{}
 
-	info := getFieldInfo(reflect.TypeOf(user))
+	info := parseColumnInfo(reflect.TypeOf(user))
 	t.Log(info.indexes, info.names)
 }

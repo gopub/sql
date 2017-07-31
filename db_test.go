@@ -12,7 +12,7 @@ import (
 var _testDB *DB
 
 type product struct {
-	ID        int    `db:"id"`
+	ID        int    `db:"id,primary key"`
 	Name      string `db:"name"`
 	UpdatedAt int64  `db:"updated_at"`
 }
@@ -41,17 +41,50 @@ func TestDB_Exec(t *testing.T) {
 	)`)
 }
 
+var _p = &product{
+	ID:        int(gox.NewID() % 10000),
+	Name:      "apple",
+	UpdatedAt: time.Now().Unix(),
+}
+
 func TestExecutor_Insert(t *testing.T) {
-	p := &product{
-		ID:        int(gox.NewID() % 10000),
-		Name:      "apple",
-		UpdatedAt: time.Now().Unix(),
-	}
-	_, err := _testDB.Insert("products", p)
+	t.Log(_p.ID)
+	_, err := _testDB.Insert("products", _p)
 	if err != nil {
 		t.Error(err)
 		t.Failed()
 	}
+}
+
+func TestExecutor_Update(t *testing.T) {
+	_p.Name = "apples"
+	_, err := _testDB.Update("products", _p)
+	if err != nil {
+		t.Error(err)
+		t.Failed()
+	}
+}
+
+func TestExecutor_Save(t *testing.T) {
+	{
+		_p.ID = 12
+		_p.Name = "banana"
+		_, err := _testDB.Save("products", _p)
+		if err != nil {
+			t.Error(err)
+			t.Failed()
+		}
+	}
+
+	{
+		_p.Name = "orange"
+		_, err := _testDB.Save("products", _p)
+		if err != nil {
+			t.Error(err)
+			t.Failed()
+		}
+	}
+
 }
 
 func TestExecutor_Select(t *testing.T) {
