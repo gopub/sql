@@ -102,6 +102,9 @@ func (e *executor) prepareInsertQuery(table string, record interface{}) (string,
 func (e *executor) Update(table string, record interface{}) error {
 	v := getStructValue(record)
 	info := e.getStructColumnInfo(v.Type())
+	if len(info.pkIndexes) == 0 {
+		panic("no primary key. please use Insert operation")
+	}
 
 	var buf bytes.Buffer
 	buf.WriteString("UPDATE ")
