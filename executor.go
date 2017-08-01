@@ -140,10 +140,17 @@ func (e *executor) Update(table string, record interface{}) error {
 }
 
 func (e *executor) Save(table string, record interface{}) error {
-	if e.driverName != "mysql" {
-		panic("Save is only supported by mysql driver")
+	switch e.driverName {
+	case "mysql":
+		return e.mysqlSave(table, record)
+	case "sqlite3":
+		return e.sqliteSave(table, record)
+	default:
+		panic("Save operation is not supported for driver: " + e.driverName)
 	}
+}
 
+func (e *executor) mysqlSave(table string, record interface{}) error {
 	query, values := e.prepareInsertQuery(table, record)
 	v := getStructValue(record)
 	info := e.getStructColumnInfo(v.Type())
@@ -161,6 +168,23 @@ func (e *executor) Save(table string, record interface{}) error {
 	}
 
 	query = buf.String()
+	gox.LogInfo(query, values)
+	result, err := e.exe.Exec(query, values...)
+	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+		id, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		v.Field(info.aiIndex).SetInt(id)
+	}
+	return err
+}
+
+func (e *executor) sqliteSave(table string, record interface{}) error {
+	query, values := e.prepareInsertQuery(table, record)
+	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
+	v := getStructValue(record)
+	info := e.getStructColumnInfo(v.Type())
 	gox.LogInfo(query, values)
 	result, err := e.exe.Exec(query, values...)
 	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
