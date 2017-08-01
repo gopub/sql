@@ -3,7 +3,6 @@ package gosql
 import (
 	"database/sql"
 	_ "github.com/Go-SQL-Driver/MySQL"
-	"github.com/natande/gox"
 	"os"
 	"testing"
 	"time"
@@ -11,16 +10,12 @@ import (
 
 var _testDB *DB
 
-type product struct {
-	ID        int    `db:"id,primary key"`
-	Name      string `db:"name"`
-	UpdatedAt int64  `db:"updated_at"`
-}
-
-type readProduct struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
-	//UpdatedAt int64  `db:"updated_at"`
+type Product struct {
+	ID        int `db:"primary key,auto_increment"`
+	Name      string
+	Price     float32
+	Text      string `db:"txt"`
+	UpdatedAt int64
 }
 
 func TestMain(m *testing.M) {
@@ -34,54 +29,63 @@ func TestMain(m *testing.M) {
 }
 
 func TestDB_Exec(t *testing.T) {
+	//_testDB.MustExec("drop table products")
 	_testDB.Exec(`create table if not exists products(
-	id int primary key,
+	id int primary key auto_increment,
 	name varchar(20) not null,
+	price double not null,
+	txt varchar(255) not null,
 	updated_at bigint not null
 	)`)
 }
 
-var _p = &product{
-	ID:        int(gox.NewID() % 10000),
+var _testProduct = &Product{
 	Name:      "apple",
+	Price:     0.1,
+	Text:      "nice",
 	UpdatedAt: time.Now().Unix(),
 }
 
 func TestExecutor_Insert(t *testing.T) {
-	t.Log(_p.ID)
-	_, err := _testDB.Insert("products", _p)
+	t.Log(_testProduct.ID)
+	err := _testDB.Insert("products", _testProduct)
 	if err != nil {
 		t.Error(err)
-		t.Failed()
+		t.Fail()
 	}
+
+	if _testProduct.ID == 0 {
+		t.Fail()
+	}
+	t.Log(_testProduct.ID)
 }
 
 func TestExecutor_Update(t *testing.T) {
-	_p.Name = "apples"
-	_, err := _testDB.Update("products", _p)
+	_testProduct.Name = "apples"
+	err := _testDB.Update("products", _testProduct)
 	if err != nil {
 		t.Error(err)
-		t.Failed()
+		t.Fail()
 	}
 }
 
 func TestExecutor_Save(t *testing.T) {
 	{
-		_p.ID = 12
-		_p.Name = "banana"
-		_, err := _testDB.Save("products", _p)
+		_testProduct.ID = 30
+		_testProduct.Name = "banana"
+		err := _testDB.Save("products", _testProduct)
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			t.Fail()
 		}
 	}
 
 	{
-		_p.Name = "orange"
-		_, err := _testDB.Save("products", _p)
+		_testProduct.Name = "orange"
+		err := _testDB.Save("products", _testProduct)
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			t.Fail()
 		}
 	}
 
@@ -89,21 +93,21 @@ func TestExecutor_Save(t *testing.T) {
 
 func TestExecutor_Select(t *testing.T) {
 	{
-		var items []readProduct
+		var items []Product
 		err := _testDB.Select("products", &items, "")
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			t.Fail()
 		}
 		t.Log(items)
 	}
 
 	{
-		var items []*readProduct
+		var items []*Product
 		err := _testDB.Select("products", &items, "id>?", 1000)
 		if err != nil {
 			t.Error(err)
-			t.Failed()
+			t.Fail()
 		}
 		for _, v := range items {
 			t.Log(*v)
@@ -113,24 +117,24 @@ func TestExecutor_Select(t *testing.T) {
 
 func TestExecutor_SelectOne(t *testing.T) {
 	{
-		var p *readProduct
+		var p *Product
 		err := _testDB.SelectOne("products", &p, "")
 		if err != nil {
 			t.Error(err)
 			if err != sql.ErrNoRows {
-				t.Failed()
+				t.Fail()
 			}
 		}
 		t.Log(*p)
 	}
 
 	{
-		var p readProduct
+		var p Product
 		err := _testDB.SelectOne("products", &p, "")
 		if err != nil {
 			t.Error(err)
 			if err != sql.ErrNoRows {
-				t.Failed()
+				t.Fail()
 			}
 		}
 		t.Log(p)

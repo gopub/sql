@@ -49,10 +49,24 @@ func (e *executor) getStructColumnInfo(typ reflect.Type) *columnInfo {
 	return info
 }
 
-func (e *executor) Insert(table string, record interface{}) (sql.Result, error) {
+func (e *executor) Insert(table string, record interface{}) error {
 	query, values := e.prepareInsertQuery(table, record)
 	gox.LogInfo(query, values)
-	return e.exe.Exec(query, values...)
+	result, err := e.exe.Exec(query, values...)
+	if err != nil {
+		return err
+	}
+	v := getStructValue(record)
+	info := e.getStructColumnInfo(v.Type())
+	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+		id, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		v.Field(info.aiIndex).SetInt(id)
+	}
+
+	return nil
 }
 
 func (e *executor) prepareInsertQuery(table string, record interface{}) (string, []interface{}) {
@@ -60,21 +74,11 @@ func (e *executor) prepareInsertQuery(table string, record interface{}) (string,
 	info := e.getStructColumnInfo(v.Type())
 
 	var columns []string
-	var values []interface{}
-	var excludedIndexes []int
-
-	for _, idx := range info.aiIndexes {
-		if v.Field(idx).Int() != 0 {
-			excludedIndexes = append(excludedIndexes, idx)
-		}
-	}
-
-	if len(excludedIndexes) > 0 {
-		for i, idx := range info.indexes {
-			if gox.IndexOfInt(excludedIndexes, idx) < 0 {
-				columns = append(columns, info.names[i])
-				values = append(values, v.Field(idx).Interface())
-			}
+	values := make([]interface{}, 0, len(info.indexes))
+	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+		columns = info.notAINames
+		for _, idx := range info.notAIIndexes {
+			values = append(values, v.Field(idx).Interface())
 		}
 	} else {
 		columns = info.names
@@ -95,7 +99,7 @@ func (e *executor) prepareInsertQuery(table string, record interface{}) (string,
 	return buf.String(), values
 }
 
-func (e *executor) Update(table string, record interface{}) (sql.Result, error) {
+func (e *executor) Update(table string, record interface{}) error {
 	v := getStructValue(record)
 	info := e.getStructColumnInfo(v.Type())
 
@@ -131,10 +135,11 @@ func (e *executor) Update(table string, record interface{}) (sql.Result, error) 
 
 	query := buf.String()
 	gox.LogInfo(query, args)
-	return e.exe.Exec(query, args...)
+	_, err := e.exe.Exec(query, args...)
+	return err
 }
 
-func (e *executor) Save(table string, record interface{}) (sql.Result, error) {
+func (e *executor) Save(table string, record interface{}) error {
 	if e.driverName != "mysql" {
 		panic("Save is only supported by mysql driver")
 	}
@@ -157,7 +162,15 @@ func (e *executor) Save(table string, record interface{}) (sql.Result, error) {
 
 	query = buf.String()
 	gox.LogInfo(query, values)
-	return e.exe.Exec(query, values...)
+	result, err := e.exe.Exec(query, values...)
+	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+		id, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		v.Field(info.aiIndex).SetInt(id)
+	}
+	return err
 }
 
 func (e *executor) Select(table string, records interface{}, where string, args ...interface{}) error {

@@ -7,6 +7,7 @@ import (
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))
+var _int64Type = reflect.TypeOf(int64(0))
 
 type columnInfo struct {
 	indexes []int    //indexes of fields without tag db:"-"
@@ -15,8 +16,7 @@ type columnInfo struct {
 	pkIndexes []int //primary key column index
 	pkNames   []string
 
-	aiIndexes []int //autoincrement column index
-	aiNames   []string
+	aiIndex int
 
 	notPKIndexes []int
 	notPKNames   []string
@@ -31,42 +31,52 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 	}
 
 	info := &columnInfo{}
+	info.aiIndex = -1
 	for i := 0; i < typ.NumField(); i++ {
 		ft := typ.Field(i)
 		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("db")))
-		strs := strings.Split(tag, ",")
-		if gox.IndexOfString(strs, "-") >= 0 {
-			continue
-		}
-
-		if len(strs) > 3 {
-			panic("only support ${column_name},primary key,autoincrement")
-		}
-
-		switch ft.Type.Kind() {
-		case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
-			break
-		default:
-			if !ft.Type.ConvertibleTo(_bytesType) {
-				panic("invalid type: db column " + ft.Name + ":" + ft.Type.String())
-			}
-		}
-
 		var name string
-		for _, str := range strs {
-			str = strings.TrimSpace(str)
-			if str == "primary key" {
-				info.pkIndexes = append(info.pkIndexes, i)
-			} else if str == "autoincrement" {
-				info.aiIndexes = append(info.aiIndexes, i)
-			} else if gox.IsVariable(str) {
-				if len(name) > 0 {
-					panic("duplicate column name: " + str)
+		if len(tag) > 0 {
+			strs := strings.Split(tag, ",")
+			if gox.IndexOfString(strs, "-") >= 0 {
+				continue
+			}
+
+			if len(strs) > 3 {
+				panic("only support ${column_name},primary key,autoincrement")
+			}
+
+			switch ft.Type.Kind() {
+			case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
+				break
+			default:
+				if !ft.Type.ConvertibleTo(_bytesType) {
+					panic("invalid type: db column " + ft.Name + ":" + ft.Type.String())
 				}
-				name = str
-			} else {
-				gox.LogWarn("Unknown tag component:", str)
+			}
+
+			for _, str := range strs {
+				str = strings.TrimSpace(str)
+				if str == "primary key" {
+					info.pkIndexes = append(info.pkIndexes, i)
+				} else if str == "auto_increment" {
+					if info.aiIndex >= 0 {
+						panic("duplicate auto_increment")
+					}
+
+					if !ft.Type.ConvertibleTo(_int64Type) {
+						panic("not integer: " + ft.Type.String())
+					}
+					info.aiIndex = i
+				} else if gox.IsVariable(str) {
+					if len(name) > 0 {
+						panic("duplicate column name: " + str)
+					}
+					name = str
+				} else {
+					gox.LogWarn("Unknown tag component:", str)
+				}
 			}
 		}
 
@@ -87,12 +97,14 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 			info.pkNames = append(info.pkNames, name)
 		}
 
-		if gox.IndexOfInt(info.aiIndexes, idx) < 0 {
+		if idx != info.aiIndex {
 			info.notAIIndexes = append(info.notAIIndexes, idx)
 			info.notAINames = append(info.notAINames, name)
-		} else {
-			info.aiNames = append(info.aiNames, name)
 		}
+	}
+
+	if info.aiIndex >= 0 && (gox.IndexOfInt(info.pkIndexes, info.aiIndex) != 0 || len(info.pkIndexes) != 1) {
+		panic("auto_increment must be used with primary key")
 	}
 
 	return info
