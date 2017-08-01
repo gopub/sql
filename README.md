@@ -6,6 +6,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
 1. Column name is converted from field name with CamelToSnake pattern by default
 1. Custom column name can be declared with db tag 
 1. `primary key`, `auto_increment` are supported in db tag
+1. Use \`db:"-"\` to ignore fields
 
         type Product struct {
     	    ID        int `db:"primary key,auto_increment"`
@@ -13,6 +14,8 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
     	    Price     float32
     	    Text      string `db:"txt"`
     	    UpdatedAt int64
+    	    
+    	    Ext interface{} `db:"-"'
         }
 
 ## Open database
@@ -37,6 +40,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
         
 #### Save
 Save is supported by mysql and sqlite3 drivers. It will insert the record if it does't exist, otherwise update the record.
+       
         p.Price = 0.3
         db.Save("products", p)
         
