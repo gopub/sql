@@ -2,7 +2,7 @@
 
 A simple sql wrapper provides convenient CRUD operations for struct objects.
  
-#### Mapping struct fields to sql columns
+## Mapping struct fields to sql columns
 1. Column name is converted from field name with CamelToSnake pattern by default
 1. Custom column name can be declared with db tag 
 1. `primary key`, `auto_increment` are supported in db tag
@@ -15,12 +15,12 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
     	    UpdatedAt int64
         }
 
-#### Open database
+## Open database
 
     	db, err := Open("mysql", "dbuser:dbpassword@tcp(localhost:3306)/dbname")
     	...
 
-#### Insert
+## Insert
 
         p := &Product{
             Name:      "apple",
@@ -30,7 +30,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
         }
         db.Insert("products", p)
         
-#### Update
+## Update
 
         p.Price = 0.2
         db.Update("products", p)
@@ -48,7 +48,7 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
         }
         db.Save("products", p)
         
-#### Select
+## Select
 
         var products []*Product
         //Select all products
@@ -57,7 +57,7 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
         //Select products whose price is less than 0.2
         db.Select("products", &products, "price<?", 0.2)
         
-#### SelectOne
+## SelectOne
 
         var p1 *Product
         db.SelectOne("products", &p1)
