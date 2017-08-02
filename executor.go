@@ -322,6 +322,16 @@ func (e *executor) SelectOne(table string, record interface{}, where string, arg
 	return err
 }
 
+func (e *executor) QueryRow(query string, args ...interface{}) *Row {
+	row := e.exe.QueryRow(query, args...)
+	return (*Row)(row)
+}
+
+func (e *executor) Query(query string, args ...interface{}) (*Rows, error) {
+	rows, err := e.exe.Query(query, args...)
+	return (*Rows)(rows), err
+}
+
 func (e *executor) Delete(table string, where string, args ...interface{}) (sql.Result, error) {
 	var buf bytes.Buffer
 	buf.WriteString("DELETE FROM ")
