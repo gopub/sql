@@ -77,3 +77,7 @@ func (d *DB) Count(table string, where string, args ...interface{}) (int, error)
 
 	return count, nil
 }
+
+func (d *DB) Close() error {
+	return d.db.Close()
+}
