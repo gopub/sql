@@ -38,7 +38,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
         p.Price = 0.2
         db.Update("products", p)
         
-#### Save
+## Save
 Save is supported by mysql and sqlite3 drivers. It will insert the record if it does't exist, otherwise update the record.
        
         p.Price = 0.3
