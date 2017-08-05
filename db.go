@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"github.com/natande/gox"
-	"sync"
 )
 
 type DB struct {
@@ -21,9 +20,8 @@ func Open(driverName, dataSourceName string) (*DB, error) {
 	return &DB{
 		db: db,
 		executor: &executor{
-			exe:             db,
-			typeToFieldInfo: sync.Map{},
-			driverName:      driverName,
+			exe:        db,
+			driverName: driverName,
 		},
 	}, nil
 }
@@ -52,8 +50,7 @@ func (d *DB) Begin() (*Tx, error) {
 	return &Tx{
 		tx: tx,
 		executor: &executor{
-			exe:             tx,
-			typeToFieldInfo: d.executor.typeToFieldInfo,
+			exe: tx,
 		},
 	}, nil
 }

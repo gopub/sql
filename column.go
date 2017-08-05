@@ -4,14 +4,17 @@ import (
 	"github.com/natande/gox"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))
 var _int64Type = reflect.TypeOf(int64(0))
+var _typeToColumnInfo = &sync.Map{} //type:*columnInfo
 
 type columnInfo struct {
-	indexes []int    //indexes of fields without tag db:"-"
-	names   []string //column names
+	indexes     []int    //indexes of fields without tag db:"-"
+	names       []string //column names
+	nameToIndex map[string]int
 
 	pkIndexes []int //primary key column index
 	pkNames   []string
@@ -25,13 +28,18 @@ type columnInfo struct {
 	notAINames   []string
 }
 
-func parseColumnInfo(typ reflect.Type) *columnInfo {
+func getColumnInfo(typ reflect.Type) *columnInfo {
+	if i, ok := _typeToColumnInfo.Load(typ); ok {
+		return i.(*columnInfo)
+	}
+
 	if typ.Kind() != reflect.Struct {
 		panic("not struct")
 	}
 
 	info := &columnInfo{}
 	info.aiIndex = -1
+	info.nameToIndex = make(map[string]int, typ.NumField())
 	for i := 0; i < typ.NumField(); i++ {
 		ft := typ.Field(i)
 		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("db")))
@@ -86,6 +94,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 
 		info.indexes = append(info.indexes, i)
 		info.names = append(info.names, name)
+		info.nameToIndex[name] = i
 	}
 
 	for i, idx := range info.indexes {
@@ -107,5 +116,6 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		panic("auto_increment must be used with primary key")
 	}
 
+	_typeToColumnInfo.Store(typ, info)
 	return info
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/natande/gox"
 	"reflect"
 	"strings"
-	"sync"
 )
 
 type sqlExecutor interface {
@@ -16,9 +15,8 @@ type sqlExecutor interface {
 }
 
 type executor struct {
-	exe             sqlExecutor
-	typeToFieldInfo sync.Map //type:*columnInfo
-	driverName      string
+	exe        sqlExecutor
+	driverName string
 }
 
 func getStructValue(i interface{}) reflect.Value {
@@ -38,17 +36,6 @@ func getStructValue(i interface{}) reflect.Value {
 	return v
 }
 
-func (e *executor) getStructColumnInfo(typ reflect.Type) *columnInfo {
-	var info *columnInfo
-	if i, ok := e.typeToFieldInfo.Load(typ); ok {
-		info = i.(*columnInfo)
-	} else {
-		info = parseColumnInfo(typ)
-		e.typeToFieldInfo.Store(typ, info)
-	}
-	return info
-}
-
 func (e *executor) Insert(table string, record interface{}) error {
 	query, values := e.prepareInsertQuery(table, record)
 	gox.LogInfo(query, values)
@@ -57,7 +44,7 @@ func (e *executor) Insert(table string, record interface{}) error {
 		return err
 	}
 	v := getStructValue(record)
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
@@ -71,7 +58,7 @@ func (e *executor) Insert(table string, record interface{}) error {
 
 func (e *executor) prepareInsertQuery(table string, record interface{}) (string, []interface{}) {
 	v := getStructValue(record)
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 
 	var columns []string
 	values := make([]interface{}, 0, len(info.indexes))
@@ -101,7 +88,7 @@ func (e *executor) prepareInsertQuery(table string, record interface{}) (string,
 
 func (e *executor) Update(table string, record interface{}) error {
 	v := getStructValue(record)
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 	if len(info.pkIndexes) == 0 {
 		panic("no primary key. please use Insert operation")
 	}
@@ -156,7 +143,7 @@ func (e *executor) Save(table string, record interface{}) error {
 func (e *executor) mysqlSave(table string, record interface{}) error {
 	query, values := e.prepareInsertQuery(table, record)
 	v := getStructValue(record)
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 
 	var buf bytes.Buffer
 	buf.WriteString(query)
@@ -187,7 +174,7 @@ func (e *executor) sqliteSave(table string, record interface{}) error {
 	query, values := e.prepareInsertQuery(table, record)
 	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
 	v := getStructValue(record)
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 	gox.LogInfo(query, values)
 	result, err := e.exe.Exec(query, values...)
 	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
@@ -226,13 +213,7 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 		panic("slice element must be a struct or pointer to struct")
 	}
 
-	var fi *columnInfo
-	if fv, ok := e.typeToFieldInfo.Load(elemType); ok {
-		fi = fv.(*columnInfo)
-	} else {
-		fi = parseColumnInfo(elemType)
-		e.typeToFieldInfo.Store(elemType, fi)
-	}
+	fi := getColumnInfo(elemType)
 
 	var buf bytes.Buffer
 	buf.WriteString("SELECT ")
@@ -255,10 +236,10 @@ func (e *executor) Select(table string, records interface{}, where string, args 
 		v.Set(reflect.New(sliceType))
 	}
 	sliceValue := v.Elem()
+	fields := make([]interface{}, len(fi.indexes))
 	for rows.Next() {
 		ptrToElem := reflect.New(elemType)
 		elem := ptrToElem.Elem()
-		fields := make([]interface{}, len(fi.indexes))
 		for i, idx := range fi.indexes {
 			fields[i] = elem.Field(idx).Addr().Interface()
 		}
@@ -297,7 +278,7 @@ func (e *executor) SelectOne(table string, record interface{}, where string, arg
 		panic("not pointer to a struct")
 	}
 
-	info := e.getStructColumnInfo(v.Type())
+	info := getColumnInfo(v.Type())
 
 	var buf bytes.Buffer
 	buf.WriteString("SELECT ")
@@ -322,6 +303,7 @@ func (e *executor) SelectOne(table string, record interface{}, where string, arg
 	return err
 }
 
+/*
 func (e *executor) QueryRow(query string, args ...interface{}) *Row {
 	row := e.exe.QueryRow(query, args...)
 	return (*Row)(row)
@@ -330,7 +312,7 @@ func (e *executor) QueryRow(query string, args ...interface{}) *Row {
 func (e *executor) Query(query string, args ...interface{}) (*Rows, error) {
 	rows, err := e.exe.Query(query, args...)
 	return (*Rows)(rows), err
-}
+}*/
 
 func (e *executor) Delete(table string, where string, args ...interface{}) (sql.Result, error) {
 	var buf bytes.Buffer
