@@ -47,7 +47,10 @@ func getTableNameByType(typ reflect.Type) string {
 	}
 
 	if reflect.PtrTo(typ).Implements(_tableNamingType) {
-		return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
+		// Pointer receiver may be dereferenced during TableName method call
+		// New its elem value in order to make pointer non-nil
+		return reflect.New(typ).Interface().(tableNaming).TableName()
+		//return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
 	}
 
 	return inflection.Plural(strings.ToLower(typ.Name()))
