@@ -11,7 +11,7 @@ import (
 var _testDB *DB
 
 type Product struct {
-	ID        int `sql:"primary key,auto_increment"`
+	ID        int `sql:"primary key auto_increment"`
 	Name      string
 	Price     float32
 	Text      string `sql:"txt"`
@@ -19,7 +19,7 @@ type Product struct {
 }
 
 type Item struct {
-	ID        int `sql:"primary key,auto_increment"`
+	ID        int `sql:"primary key auto_increment"`
 	Name      string
 	Price     float32
 	Text      string `sql:"txt"`

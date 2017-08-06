@@ -10,6 +10,24 @@ import (
 var _bytesType = reflect.TypeOf([]byte(nil))
 var _int64Type = reflect.TypeOf(int64(0))
 var _typeToColumnInfo = &sync.Map{} //type:*columnInfo
+var _sqlKeywords = map[string]struct{}{
+	"primary":        {},
+	"key":            {},
+	"auto_increment": {},
+	"insert":         {},
+	"create":         {},
+	"table":          {},
+	"database":       {},
+	"select":         {},
+	"update":         {},
+	"unique":         {},
+	"int":            {},
+	"bigint":         {},
+	"bool":           {},
+	"tinyint":        {},
+	"double":         {},
+	"date":           {},
+}
 
 type columnInfo struct {
 	indexes     []int    //indexes of fields without tag db:"-"
@@ -45,13 +63,8 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("sql")))
 		var name string
 		if len(tag) > 0 {
-			strs := strings.Split(tag, ",")
-			if gox.IndexOfString(strs, "-") >= 0 {
+			if tag == "-" {
 				continue
-			}
-
-			if len(strs) > 3 {
-				panic("only support ${column_name},primary key,auto_increment")
 			}
 
 			switch ft.Type.Kind() {
@@ -64,26 +77,25 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 				}
 			}
 
-			for _, str := range strs {
-				str = strings.TrimSpace(str)
-				if str == "primary key" {
-					info.pkIndexes = append(info.pkIndexes, i)
-				} else if str == "auto_increment" {
-					if info.aiIndex >= 0 {
-						panic("duplicate auto_increment")
-					}
+			if strings.Contains(tag, "primary key") {
+				info.pkIndexes = append(info.pkIndexes, i)
+			}
 
-					if !ft.Type.ConvertibleTo(_int64Type) {
-						panic("not integer: " + ft.Type.String())
-					}
-					info.aiIndex = i
-				} else if gox.IsVariable(str) {
-					if len(name) > 0 {
-						panic("duplicate column name: " + str)
-					}
-					name = str
-				} else {
-					gox.LogWarn("unknown tag component:", str)
+			if strings.Contains(tag, "auto_increment") {
+				if info.aiIndex >= 0 {
+					panic("duplicate auto_increment")
+				}
+
+				if !ft.Type.ConvertibleTo(_int64Type) {
+					panic("not integer: " + ft.Type.String())
+				}
+				info.aiIndex = i
+			}
+
+			strs := strings.SplitN(tag, " ", 2)
+			if len(strs) > 0 {
+				if _, found := _sqlKeywords[strs[0]]; !found && gox.IsVariable(strs[0]) {
+					name = strs[0]
 				}
 			}
 		}

@@ -9,7 +9,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
 1. Use \`sql:"-"\` to ignore fields
 
         type Product struct {
-    	    ID        int `sql:"primary key,auto_increment"`
+    	    ID        int `sql:"primary key auto_increment"`
     	    Name      string
     	    Price     float32
     	    Text      string `sql:"txt"`
