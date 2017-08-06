@@ -6,16 +6,16 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
 1. Column name is converted from field name with CamelToSnake pattern by default
 1. Custom column name can be declared with db tag 
 1. `primary key`, `auto_increment` are supported in db tag
-1. Use \`db:"-"\` to ignore fields
+1. Use \`sql:"-"\` to ignore fields
 
         type Product struct {
-    	    ID        int `db:"primary key,auto_increment"`
+    	    ID        int `sql:"primary key,auto_increment"`
     	    Name      string
     	    Price     float32
-    	    Text      string `db:"txt"`
+    	    Text      string `sql:"txt"`
     	    UpdatedAt int64
     	    
-    	    Ext interface{} `db:"-"'
+    	    Ext interface{} `sql:"-"'
         }
 
 ## Open database

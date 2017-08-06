@@ -42,7 +42,7 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 	info.nameToIndex = make(map[string]int, typ.NumField())
 	for i := 0; i < typ.NumField(); i++ {
 		ft := typ.Field(i)
-		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("db")))
+		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("sql")))
 		var name string
 		if len(tag) > 0 {
 			strs := strings.Split(tag, ",")
