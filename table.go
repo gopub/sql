@@ -47,33 +47,24 @@ func getTableNameBySlice(records interface{}) string {
 		panic("must be a pointer to slice")
 	}
 
-	var tableName string
 	elemType := typ.Elem()
-	if elemType.Kind() == reflect.Ptr {
-		if elemType.Elem().Implements(_tableNamingType) {
-			tableName = reflect.Zero(elemType.Elem()).Interface().(tableNaming).TableName()
-		} else if elemType.Implements(_tableNamingType) {
-			tableName = reflect.Zero(elemType).Interface().(tableNaming).TableName()
-		}
-	} else {
-		if elemType.Implements(_tableNamingType) {
-			tableName = reflect.Zero(elemType).Interface().(tableNaming).TableName()
-		} else {
-			pElemType := reflect.PtrTo(elemType)
-			if pElemType.Implements(_tableNamingType) {
-				tableName = reflect.Zero(pElemType).Interface().(tableNaming).TableName()
-			}
-		}
+	for elemType.Kind() == reflect.Ptr {
+		elemType = elemType.Elem()
 	}
 
-	if len(tableName) == 0 {
-		for elemType.Kind() == reflect.Ptr {
-			elemType = elemType.Elem()
-		}
-		tableName = inflection.Plural(strings.ToLower(elemType.Name()))
+	if elemType.Kind() != reflect.Struct {
+		panic("not struct: " + typ.String())
 	}
 
-	return tableName
+	if elemType.Implements(_tableNamingType) {
+		return reflect.Zero(elemType).Interface().(tableNaming).TableName()
+	}
+
+	if reflect.PtrTo(elemType).Implements(_tableNamingType) {
+		return reflect.Zero(reflect.PtrTo(elemType)).Interface().(tableNaming).TableName()
+	}
+
+	return inflection.Plural(strings.ToLower(elemType.Name()))
 }
 
 type Table struct {
