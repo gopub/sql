@@ -51,7 +51,7 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 			}
 
 			if len(strs) > 3 {
-				panic("only support ${column_name},primary key,autoincrement")
+				panic("only support ${column_name},primary key,auto_increment")
 			}
 
 			switch ft.Type.Kind() {
@@ -83,7 +83,7 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 					}
 					name = str
 				} else {
-					gox.LogWarn("Unknown tag component:", str)
+					gox.LogWarn("unknown tag component:", str)
 				}
 			}
 		}

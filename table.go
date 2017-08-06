@@ -26,6 +26,14 @@ func getTableName(record interface{}) string {
 		panic("not struct: " + typ.String())
 	}
 
+	if typ.Implements(_tableNamingType) {
+		return reflect.Zero(typ).Interface().(tableNaming).TableName()
+	}
+
+	if reflect.PtrTo(typ).Implements(_tableNamingType) {
+		return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
+	}
+
 	return inflection.Plural(strings.ToLower(typ.Name()))
 }
 
@@ -41,9 +49,24 @@ func getTableNameBySlice(records interface{}) string {
 
 	var tableName string
 	elemType := typ.Elem()
-	if elemType.Implements(_tableNamingType) {
-		tableName = reflect.Zero(elemType).Interface().(tableNaming).TableName()
+	if elemType.Kind() == reflect.Ptr {
+		if elemType.Elem().Implements(_tableNamingType) {
+			tableName = reflect.Zero(elemType.Elem()).Interface().(tableNaming).TableName()
+		} else if elemType.Implements(_tableNamingType) {
+			tableName = reflect.Zero(elemType).Interface().(tableNaming).TableName()
+		}
 	} else {
+		if elemType.Implements(_tableNamingType) {
+			tableName = reflect.Zero(elemType).Interface().(tableNaming).TableName()
+		} else {
+			pElemType := reflect.PtrTo(elemType)
+			if pElemType.Implements(_tableNamingType) {
+				tableName = reflect.Zero(pElemType).Interface().(tableNaming).TableName()
+			}
+		}
+	}
+
+	if len(tableName) == 0 {
 		for elemType.Kind() == reflect.Ptr {
 			elemType = elemType.Elem()
 		}
