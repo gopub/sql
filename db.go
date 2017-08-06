@@ -1,14 +1,15 @@
 package gosql
 
 import (
-	"bytes"
 	"database/sql"
-	"github.com/natande/gox"
+	"reflect"
 )
 
+var _tableNamingType = reflect.TypeOf((*tableNaming)(nil)).Elem()
+
 type DB struct {
-	db *sql.DB
-	*executor
+	db         *sql.DB
+	driverName string
 }
 
 func Open(driverName, dataSourceName string) (*DB, error) {
@@ -18,11 +19,8 @@ func Open(driverName, dataSourceName string) (*DB, error) {
 	}
 
 	return &DB{
-		db: db,
-		executor: &executor{
-			exe:        db,
-			driverName: driverName,
-		},
+		db:         db,
+		driverName: driverName,
 	}, nil
 }
 
@@ -48,33 +46,39 @@ func (d *DB) Begin() (*Tx, error) {
 	}
 
 	return &Tx{
-		tx: tx,
-		executor: &executor{
-			exe: tx,
-		},
+		tx:         tx,
+		driverName: d.driverName,
 	}, nil
-}
-
-func (d *DB) Count(table string, where string, args ...interface{}) (int, error) {
-	var buf bytes.Buffer
-	buf.WriteString("SELECT COUNT(*) FROM ")
-	buf.WriteString(table)
-	if len(where) > 0 {
-		buf.WriteString(" WHERE ")
-		buf.WriteString(where)
-	}
-	query := buf.String()
-	gox.LogInfo(query, args)
-
-	var count int
-	err := d.db.QueryRow(query, args...).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 func (d *DB) Close() error {
 	return d.db.Close()
+}
+
+func (d *DB) Table(name string) *Table {
+	return &Table{
+		exe:        d.db,
+		driverName: d.driverName,
+		name:       name,
+	}
+}
+
+func (d *DB) Insert(record interface{}) error {
+	return d.Table(getTableName(record)).Insert(record)
+}
+
+func (d *DB) Update(record interface{}) error {
+	return d.Table(getTableName(record)).Update(record)
+}
+
+func (d *DB) Save(record interface{}) error {
+	return d.Table(getTableName(record)).Save(record)
+}
+
+func (d *DB) Select(records interface{}, where string, args ...interface{}) error {
+	return d.Table(getTableNameBySlice(records)).Select(records, where, args...)
+}
+
+func (d *DB) SelectOne(record interface{}, where string, args ...interface{}) error {
+	return d.Table(getTableName(record)).SelectOne(record, where, args...)
 }

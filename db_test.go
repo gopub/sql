@@ -48,7 +48,7 @@ var _testProduct = &Product{
 
 func TestExecutor_Insert(t *testing.T) {
 	t.Log(_testProduct.ID)
-	err := _testDB.Insert("products", _testProduct)
+	err := _testDB.Insert(_testProduct)
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -62,7 +62,7 @@ func TestExecutor_Insert(t *testing.T) {
 
 func TestExecutor_Update(t *testing.T) {
 	_testProduct.Name = "apples"
-	err := _testDB.Update("products", _testProduct)
+	err := _testDB.Update(_testProduct)
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -73,7 +73,7 @@ func TestExecutor_Save(t *testing.T) {
 	{
 		_testProduct.ID = 30
 		_testProduct.Name = "banana"
-		err := _testDB.Save("products", _testProduct)
+		err := _testDB.Save(_testProduct)
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -82,7 +82,7 @@ func TestExecutor_Save(t *testing.T) {
 
 	{
 		_testProduct.Name = "orange"
-		err := _testDB.Save("products", _testProduct)
+		err := _testDB.Save(_testProduct)
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -94,7 +94,7 @@ func TestExecutor_Save(t *testing.T) {
 func TestExecutor_Select(t *testing.T) {
 	{
 		var items []Product
-		err := _testDB.Select("products", &items, "")
+		err := _testDB.Select(&items, "")
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -104,7 +104,7 @@ func TestExecutor_Select(t *testing.T) {
 
 	{
 		var items []*Product
-		err := _testDB.Select("products", &items, "id>?", 1000)
+		err := _testDB.Select(&items, "id>?", 1000)
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -118,7 +118,7 @@ func TestExecutor_Select(t *testing.T) {
 func TestExecutor_SelectOne(t *testing.T) {
 	{
 		var p *Product
-		err := _testDB.SelectOne("products", &p, "")
+		err := _testDB.SelectOne(&p, "")
 		if err != nil {
 			t.Error(err)
 			if err != sql.ErrNoRows {
@@ -130,7 +130,7 @@ func TestExecutor_SelectOne(t *testing.T) {
 
 	{
 		var p Product
-		err := _testDB.SelectOne("products", &p, "")
+		err := _testDB.SelectOne(&p, "")
 		if err != nil {
 			t.Error(err)
 			if err != sql.ErrNoRows {

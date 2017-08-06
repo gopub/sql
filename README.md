@@ -31,18 +31,18 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
             Text:      "nice",
             UpdatedAt: time.Now().Unix(),
         }
-        db.Insert("products", p)
+        db.Insert(p)
         
 ## Update
 
         p.Price = 0.2
-        db.Update("products", p)
+        db.Update(p)
         
 ## Save
 Save is supported by mysql and sqlite3 drivers. It will insert the record if it does't exist, otherwise update the record.
        
         p.Price = 0.3
-        db.Save("products", p)
+        db.Save(p)
         
         p = &Product{
             Name:      "apple",
@@ -50,22 +50,22 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
             Text:      "nice",
             UpdatedAt: time.Now().Unix(),
         }
-        db.Save("products", p)
+        db.Save(p)
         
 ## Select
 
         var products []*Product
         //Select all products
-        db.Select("products", &products)
+        db.Select(&products)
         
         //Select products whose price is less than 0.2
-        db.Select("products", &products, "price<?", 0.2)
+        db.Select(&products, "price<?", 0.2)
         
 ## SelectOne
 
         var p1 *Product
-        db.SelectOne("products", &p1)
+        db.SelectOne(&p1)
      
         var p2 Product
-        db.SelectOne("products", &p2, "id=?", 3)
+        db.SelectOne(&p2, "id=?", 3)
         
