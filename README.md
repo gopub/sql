@@ -4,9 +4,10 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
  
 ## Mapping struct fields to sql columns
 1. Column name is converted from field name with CamelToSnake pattern by default
-1. Custom column name can be declared with db tag 
+1. Custom column name can be declared with `sql` tag 
 1. `primary key`, `auto_increment` are supported in db tag
 1. Use \`sql:"-"\` to ignore fields
+1. Column must be field which can be exported
 
         type Product struct {
     	    ID        int `sql:"primary key auto_increment"`
@@ -16,6 +17,22 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
     	    UpdatedAt int64
     	    
     	    Ext interface{} `sql:"-"'
+        }
+        
+## Table Name
+1. Default table name is the plural form of struct name. 
+
+    `type Product struct`'s table name is `products`  
+    `type User struct`'s table name is `users`
+1. Custom table name is provided by `TableName` method
+
+        type User struct {
+            ID int `sql:"primary key"`
+            Name string
+        }
+        
+        func (u *User) TableName() string {
+            return "users" + fmt.Sprint(u.id%100)
         }
 
 ## Open database
@@ -69,3 +86,14 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
         var p2 Product
         db.SelectOne(&p2, "id=?", 3)
         
+## Specify table name explicitly
+
+        db.Table("products").Insert(p)
+        
+## Transaction
+        
+        tx, err := db.Begin()
+        tx.Insert(p1)
+        tx.Insert(p2)
+        tx.Table("products").Insert(p3)
+        tx.Commit()
