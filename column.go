@@ -67,14 +67,12 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 				continue
 			}
 
-			switch ft.Type.Kind() {
-			case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
-				break
-			default:
-				if !ft.Type.ConvertibleTo(_bytesType) {
-					panic("invalid type: db column " + ft.Name + ":" + ft.Type.String())
-				}
+			if ft.Name[0] < 'A' || ft.Name[0] > 'Z' {
+				panic("sql column must be exported field: " + ft.Name)
+			}
+
+			if !isSupportType(ft.Type) {
+				panic("invalid type: db column " + typ.Name() + ":" + typ.String())
 			}
 
 			if strings.Contains(tag, "primary key") {
@@ -98,6 +96,10 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 					name = strs[0]
 				}
 			}
+		}
+
+		if !isSupportType(ft.Type) {
+			continue
 		}
 
 		if len(name) == 0 {
@@ -130,4 +132,18 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 
 	_typeToColumnInfo.Store(typ, info)
 	return info
+}
+
+func isSupportType(typ reflect.Type) bool {
+	switch typ.Kind() {
+	case reflect.Bool, reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.String:
+		return true
+	default:
+		if typ.ConvertibleTo(_bytesType) {
+			return true
+		}
+	}
+
+	return false
 }
