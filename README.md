@@ -97,3 +97,18 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
         tx.Insert(p2)
         tx.Table("products").Insert(p3)
         tx.Commit()
+        
+## Support embedded struct
+        
+        type Product struct {
+            ID        int `sql:"primary key auto_increment"`
+            Name      string
+            Price     float32
+            Text      string `sql:"txt"`
+            UpdatedAt int64
+        }
+        
+        type ProductDetail struct {
+            Product
+            Detail string
+        }
