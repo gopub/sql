@@ -264,7 +264,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 	sliceValue := v.Elem()
 	fields := make([]interface{}, len(fi.indexes))
 	for rows.Next() {
-		ptrToElem := reflect.New(elemType)
+		ptrToElem := gox.DeepNew(elemType)
 		elem := ptrToElem.Elem()
 		for i, idx := range fi.indexes {
 			fields[i] = elem.FieldByIndex(idx).Addr().Interface()
@@ -291,12 +291,10 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		panic("not pointer to a struct")
 	}
 
-	ev := reflect.New(rv.Elem().Type()).Elem()
+	//Store result in ev. If failed, don't change record's value
+	ev := gox.DeepNew(rv.Elem().Type()).Elem()
 	v := ev
 	if v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
-		}
 		v = v.Elem()
 	}
 

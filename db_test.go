@@ -10,16 +10,24 @@ import (
 
 var _testDB *DB
 
+type ProductID struct {
+	ID int `sql:"primary key auto_increment"`
+}
+
 type Product struct {
-	ID        int `sql:"primary key auto_increment"`
+	ProductID
 	Name      string
 	Price     float32
 	Text      string `sql:"txt"`
 	UpdatedAt int64
 }
 
+type ItemID struct {
+	ID int `sql:"primary key auto_increment"`
+}
+
 type Item struct {
-	ID        int `sql:"primary key auto_increment"`
+	*ItemID
 	Name      string
 	Price     float32
 	Text      string `sql:"txt"`
@@ -59,6 +67,7 @@ var _testProduct = &Product{
 }
 
 var _testItem = &Item{
+	ItemID:    &ItemID{},
 	Name:      "watermelon",
 	Price:     0.3,
 	Text:      "good",

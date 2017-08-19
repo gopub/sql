@@ -122,7 +122,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 			}
 
 			if strings.Contains(tag, "auto_increment") {
-				if len(info.aiIndex) >= 0 {
+				if len(info.aiIndex) > 0 {
 					panic("duplicate auto_increment")
 				}
 
@@ -142,6 +142,16 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 
 		if len(name) == 0 {
 			name = gox.CamelToSnake(f.Name)
+		}
+
+		if idx, found := info.nameToIndex[name]; found {
+			if len(idx) < len(f.Index) {
+				continue
+			}
+
+			if len(idx) == len(f.Index) {
+				panic("duplicate column name:" + name)
+			}
 		}
 
 		info.indexes = append(info.indexes, f.Index)
