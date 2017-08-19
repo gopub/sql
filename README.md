@@ -112,3 +112,16 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
             Product
             Detail string
         }
+
+## Support json
+
+        type Coordinate struct {
+            Lng float
+            Lat float
+        }
+        
+        type Topic struct {
+            ID          int64
+            Title       string
+            Location    *Coordinate `sql:"json"`
+        }
