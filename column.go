@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))
@@ -29,20 +30,42 @@ var _sqlKeywords = map[string]struct{}{
 	"date":           {},
 }
 
-type columnInfo struct {
-	indexes     []int    //indexes of fields without tag db:"-"
-	names       []string //column names
-	nameToIndex map[string]int
+type fieldIndex []int
 
-	pkIndexes []int //primary key column index
+func (f fieldIndex) DeepEqual(v fieldIndex) bool {
+	return reflect.DeepEqual(f, v)
+}
+
+func (f fieldIndex) Equal(v fieldIndex) bool {
+	s1 := (*reflect.SliceHeader)(unsafe.Pointer(&f))
+	s2 := (*reflect.SliceHeader)(unsafe.Pointer(&v))
+	return s1.Data == s2.Data
+}
+
+func searchFieldIndex(indexes []fieldIndex, index fieldIndex) int {
+	for i, idx := range indexes {
+		if idx.Equal(index) {
+			return i
+		}
+	}
+
+	return -1
+}
+
+type columnInfo struct {
+	indexes     []fieldIndex //indexes of fields without tag db:"-"
+	names       []string     //column names
+	nameToIndex map[string]fieldIndex
+
+	pkIndexes []fieldIndex //primary key column index
 	pkNames   []string
 
-	aiIndex int
+	aiIndex fieldIndex
 
-	notPKIndexes []int
+	notPKIndexes []fieldIndex
 	notPKNames   []string
 
-	notAIIndexes []int
+	notAIIndexes []fieldIndex
 	notAINames   []string
 }
 
@@ -55,39 +78,58 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 		panic("not struct")
 	}
 
+	info := parseColumnInfo(typ)
+	_typeToColumnInfo.Store(typ, info)
+	return info
+}
+
+func parseColumnInfo(typ reflect.Type) *columnInfo {
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+
+	if typ.Kind() != reflect.Struct {
+		return nil
+	}
+
 	info := &columnInfo{}
-	info.aiIndex = -1
-	info.nameToIndex = make(map[string]int, typ.NumField())
-	for i := 0; i < typ.NumField(); i++ {
-		ft := typ.Field(i)
-		tag := strings.TrimSpace(strings.ToLower(ft.Tag.Get("sql")))
+	info.nameToIndex = make(map[string]fieldIndex, typ.NumField())
+
+	fields := getAllFields(typ)
+
+	for _, f := range fields {
+		if !isSupportType(f.Type) {
+			continue
+		}
+
+		tag := strings.TrimSpace(strings.ToLower(f.Tag.Get("sql")))
 		var name string
 		if len(tag) > 0 {
 			if tag == "-" {
 				continue
 			}
 
-			if ft.Name[0] < 'A' || ft.Name[0] > 'Z' {
-				panic("sql column must be exported field: " + ft.Name)
+			if f.Name[0] < 'A' || f.Name[0] > 'Z' {
+				panic("sql column must be exported field: " + f.Name)
 			}
 
-			if !isSupportType(ft.Type) {
+			if !isSupportType(f.Type) {
 				panic("invalid type: db column " + typ.Name() + ":" + typ.String())
 			}
 
 			if strings.Contains(tag, "primary key") {
-				info.pkIndexes = append(info.pkIndexes, i)
+				info.pkIndexes = append(info.pkIndexes, f.Index)
 			}
 
 			if strings.Contains(tag, "auto_increment") {
-				if info.aiIndex >= 0 {
+				if len(info.aiIndex) >= 0 {
 					panic("duplicate auto_increment")
 				}
 
-				if !ft.Type.ConvertibleTo(_int64Type) {
-					panic("not integer: " + ft.Type.String())
+				if !f.Type.ConvertibleTo(_int64Type) {
+					panic("not integer: " + f.Type.String())
 				}
-				info.aiIndex = i
+				info.aiIndex = f.Index
 			}
 
 			strs := strings.SplitN(tag, " ", 2)
@@ -98,39 +140,34 @@ func getColumnInfo(typ reflect.Type) *columnInfo {
 			}
 		}
 
-		if !isSupportType(ft.Type) {
-			continue
-		}
-
 		if len(name) == 0 {
-			name = gox.CamelToSnake(ft.Name)
+			name = gox.CamelToSnake(f.Name)
 		}
 
-		info.indexes = append(info.indexes, i)
+		info.indexes = append(info.indexes, f.Index)
 		info.names = append(info.names, name)
-		info.nameToIndex[name] = i
+		info.nameToIndex[name] = f.Index
 	}
 
 	for i, idx := range info.indexes {
 		name := info.names[i]
-		if gox.IndexOfInt(info.pkIndexes, idx) < 0 {
+		if searchFieldIndex(info.pkIndexes, idx) < 0 {
 			info.notPKIndexes = append(info.notPKIndexes, idx)
 			info.notPKNames = append(info.notPKNames, name)
 		} else {
 			info.pkNames = append(info.pkNames, name)
 		}
 
-		if idx != info.aiIndex {
+		if !reflect.DeepEqual(idx, info.aiIndex) {
 			info.notAIIndexes = append(info.notAIIndexes, idx)
 			info.notAINames = append(info.notAINames, name)
 		}
 	}
 
-	if info.aiIndex >= 0 && (gox.IndexOfInt(info.pkIndexes, info.aiIndex) != 0 || len(info.pkIndexes) != 1) {
+	if len(info.aiIndex) >= 0 && (searchFieldIndex(info.pkIndexes, info.aiIndex) != 0 || len(info.pkIndexes) != 1) {
 		panic("auto_increment must be used with primary key")
 	}
 
-	_typeToColumnInfo.Store(typ, info)
 	return info
 }
 
@@ -146,4 +183,26 @@ func isSupportType(typ reflect.Type) bool {
 	}
 
 	return false
+}
+
+func getAllFields(typ reflect.Type) []reflect.StructField {
+	fields := make([]reflect.StructField, 0)
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if f.Anonymous {
+			t := f.Type
+			if t.Kind() == reflect.Ptr {
+				t = t.Elem()
+			}
+			subFields := getAllFields(t)
+			for i := range subFields {
+				subFields[i].Index = append([]int{i}, subFields[i].Index...)
+			}
+			fields = append(fields, subFields...)
+		} else {
+			fields = append(fields, f)
+		}
+	}
+
+	return fields
 }

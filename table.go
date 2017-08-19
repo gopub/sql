@@ -71,12 +71,12 @@ func (t *Table) Insert(record interface{}) error {
 	}
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.Field(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.aiIndex).SetInt(id)
 	}
 
 	return nil
@@ -88,15 +88,15 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
 
 	var columns []string
 	values := make([]interface{}, 0, len(info.indexes))
-	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
 		columns = info.notAINames
 		for _, idx := range info.notAIIndexes {
-			values = append(values, v.Field(idx).Interface())
+			values = append(values, v.FieldByIndex(idx).Interface())
 		}
 	} else {
 		columns = info.names
 		for _, idx := range info.indexes {
-			values = append(values, v.Field(idx).Interface())
+			values = append(values, v.FieldByIndex(idx).Interface())
 		}
 	}
 
@@ -142,11 +142,11 @@ func (t *Table) Update(record interface{}) error {
 
 	args := make([]interface{}, 0, len(info.indexes))
 	for _, idx := range info.notPKIndexes {
-		args = append(args, v.Field(idx).Interface())
+		args = append(args, v.FieldByIndex(idx).Interface())
 	}
 
 	for _, idx := range info.pkIndexes {
-		args = append(args, v.Field(idx).Interface())
+		args = append(args, v.FieldByIndex(idx).Interface())
 	}
 
 	query := buf.String()
@@ -180,18 +180,18 @@ func (t *Table) mysqlSave(record interface{}) error {
 		}
 		buf.WriteString(c)
 		buf.WriteString(" = ?")
-		values = append(values, v.Field(info.notPKIndexes[i]).Interface())
+		values = append(values, v.FieldByIndex(info.notPKIndexes[i]).Interface())
 	}
 
 	query = buf.String()
 	gox.LogInfo(query, values)
 	result, err := t.exe.Exec(query, values...)
-	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.Field(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.aiIndex).SetInt(id)
 	}
 	return err
 }
@@ -203,12 +203,12 @@ func (t *Table) sqliteSave(record interface{}) error {
 	info := getColumnInfo(v.Type())
 	gox.LogInfo(query, values)
 	result, err := t.exe.Exec(query, values...)
-	if info.aiIndex >= 0 && v.Field(info.aiIndex).Int() == 0 {
+	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.Field(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.aiIndex).SetInt(id)
 	}
 	return err
 }
@@ -267,7 +267,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 		ptrToElem := reflect.New(elemType)
 		elem := ptrToElem.Elem()
 		for i, idx := range fi.indexes {
-			fields[i] = elem.Field(idx).Addr().Interface()
+			fields[i] = elem.FieldByIndex(idx).Addr().Interface()
 		}
 
 		err = rows.Scan(fields...)
@@ -320,7 +320,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
-		fieldAddrs[i] = v.Field(idx).Addr().Interface()
+		fieldAddrs[i] = v.FieldByIndex(idx).Addr().Interface()
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
 	if err == nil {
