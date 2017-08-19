@@ -2,6 +2,7 @@ package gosql
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/jinzhu/inflection"
 	"github.com/natande/gox"
 	"reflect"
@@ -63,7 +64,10 @@ type Table struct {
 }
 
 func (t *Table) Insert(record interface{}) error {
-	query, values := t.prepareInsertQuery(record)
+	query, values, err := t.prepareInsertQuery(record)
+	if err != nil {
+		return err
+	}
 	gox.LogInfo(query, values)
 	result, err := t.exe.Exec(query, values...)
 	if err != nil {
@@ -82,7 +86,7 @@ func (t *Table) Insert(record interface{}) error {
 	return nil
 }
 
-func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
+func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}, error) {
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
 
@@ -90,13 +94,20 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
 	values := make([]interface{}, 0, len(info.indexes))
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		columns = info.notAINames
-		for _, name := range info.notAINames {
-			values = append(values, v.FieldByIndex(info.nameToIndex[name]).Interface())
-		}
 	} else {
 		columns = info.names
-		for _, idx := range info.indexes {
-			values = append(values, v.FieldByIndex(idx).Interface())
+	}
+
+	for _, name := range columns {
+		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
+		if gox.IndexOfString(info.jsonNames, name) >= 0 {
+			data, err := json.Marshal(k)
+			if err != nil {
+				return "", nil, err
+			}
+			values = append(values, data)
+		} else {
+			values = append(values, k)
 		}
 	}
 
@@ -109,7 +120,7 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
 	buf.WriteString(strings.Repeat("?, ", len(columns)))
 	buf.Truncate(buf.Len() - 2)
 	buf.WriteString(")")
-	return buf.String(), values
+	return buf.String(), values, nil
 }
 
 func (t *Table) Update(record interface{}) error {
@@ -142,7 +153,16 @@ func (t *Table) Update(record interface{}) error {
 
 	args := make([]interface{}, 0, len(info.indexes))
 	for _, name := range info.notPKNames {
-		args = append(args, v.FieldByIndex(info.nameToIndex[name]).Interface())
+		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
+		if gox.IndexOfString(info.jsonNames, name) >= 0 {
+			data, err := json.Marshal(k)
+			if err != nil {
+				return err
+			}
+			args = append(args, data)
+		} else {
+			args = append(args, k)
+		}
 	}
 
 	for _, name := range info.pkNames {
@@ -167,7 +187,11 @@ func (t *Table) Save(record interface{}) error {
 }
 
 func (t *Table) mysqlSave(record interface{}) error {
-	query, values := t.prepareInsertQuery(record)
+	query, values, err := t.prepareInsertQuery(record)
+	if err != nil {
+		return err
+	}
+
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
 
@@ -180,7 +204,16 @@ func (t *Table) mysqlSave(record interface{}) error {
 		}
 		buf.WriteString(name)
 		buf.WriteString(" = ?")
-		values = append(values, v.FieldByIndex(info.nameToIndex[name]).Interface())
+		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
+		if gox.IndexOfString(info.jsonNames, name) >= 0 {
+			data, err := json.Marshal(k)
+			if err != nil {
+				return err
+			}
+			values = append(values, data)
+		} else {
+			values = append(values, k)
+		}
 	}
 
 	query = buf.String()
@@ -197,7 +230,11 @@ func (t *Table) mysqlSave(record interface{}) error {
 }
 
 func (t *Table) sqliteSave(record interface{}) error {
-	query, values := t.prepareInsertQuery(record)
+	query, values, err := t.prepareInsertQuery(record)
+	if err != nil {
+		return err
+	}
+
 	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
@@ -267,12 +304,28 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 		ptrToElem := gox.DeepNew(elemType)
 		elem := ptrToElem.Elem()
 		for i, idx := range fi.indexes {
-			fields[i] = elem.FieldByIndex(idx).Addr().Interface()
+			if gox.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
+				var data []byte
+				fields[i] = &data
+			} else {
+				fields[i] = elem.FieldByIndex(idx).Addr().Interface()
+			}
 		}
 
 		err = rows.Scan(fields...)
 		if err != nil {
 			return err
+		}
+
+		for _, name := range fi.jsonNames {
+			idx := fi.nameToIndex[name]
+			i := gox.IndexOfString(fi.names, name)
+			addr := fields[i]
+			data := reflect.ValueOf(addr).Elem().Interface()
+			err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
+			if err != nil {
+				return err
+			}
 		}
 
 		if isPtr {
@@ -318,9 +371,24 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
-		fieldAddrs[i] = v.FieldByIndex(idx).Addr().Interface()
+		if gox.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
+			var data []byte
+			fieldAddrs[i] = &data
+		} else {
+			fieldAddrs[i] = v.FieldByIndex(idx).Addr().Interface()
+		}
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
+	for _, name := range info.jsonNames {
+		idx := info.nameToIndex[name]
+		i := gox.IndexOfString(info.names, name)
+		addr := fieldAddrs[i]
+		data := reflect.ValueOf(addr).Elem().Interface()
+		err = json.Unmarshal(data.([]byte), v.FieldByIndex(idx).Addr().Interface())
+		if err != nil {
+			return err
+		}
+	}
 	if err == nil {
 		rv.Elem().Set(ev)
 	}

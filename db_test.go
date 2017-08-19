@@ -10,6 +10,11 @@ import (
 
 var _testDB *DB
 
+type Content struct {
+	Title string `json:"title"`
+	Desc  string `json:"desc"`
+}
+
 type ProductID struct {
 	ID int `sql:"primary key auto_increment"`
 }
@@ -18,7 +23,7 @@ type Product struct {
 	ProductID
 	Name      string
 	Price     float32
-	Text      string `sql:"txt"`
+	Text      Content `sql:"txt json"`
 	UpdatedAt int64
 }
 
@@ -30,7 +35,7 @@ type Item struct {
 	*ItemID
 	Name      string
 	Price     float32
-	Text      string `sql:"txt"`
+	Text      *Content `sql:"txt json"`
 	UpdatedAt int64
 }
 
@@ -62,7 +67,7 @@ func TestDB_Exec(t *testing.T) {
 var _testProduct = &Product{
 	Name:      "apple",
 	Price:     0.1,
-	Text:      "nice",
+	Text:      Content{Title: "nice"},
 	UpdatedAt: time.Now().Unix(),
 }
 
@@ -70,7 +75,7 @@ var _testItem = &Item{
 	ItemID:    &ItemID{},
 	Name:      "watermelon",
 	Price:     0.3,
-	Text:      "good",
+	Text:      &Content{Title: "good"},
 	UpdatedAt: time.Now().Unix(),
 }
 

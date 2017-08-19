@@ -43,23 +43,16 @@ func (f fieldIndex) Equal(v fieldIndex) bool {
 	return s1.Data == s2.Data
 }
 
-func searchFieldIndex(indexes []fieldIndex, index fieldIndex) int {
-	for i, idx := range indexes {
-		if idx.Equal(index) {
-			return i
-		}
-	}
-
-	return -1
-}
-
 type columnInfo struct {
 	indexes     []fieldIndex //indexes of fields without tag db:"-"
 	names       []string     //column names
 	nameToIndex map[string]fieldIndex
 
-	pkNames    []string //primary key column names
-	aiName     string   //auto increment column name
+	pkNames   []string //primary key column names
+	aiName    string   //auto increment column name
+	jsonNames []string
+
+	//for speed
 	notPKNames []string
 	notAINames []string
 }
@@ -93,26 +86,29 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 	fields := getAllFields(typ)
 
 	for _, f := range fields {
-		if !isSupportType(f.Type) {
-			continue
-		}
-
 		tag := strings.TrimSpace(strings.ToLower(f.Tag.Get("sql")))
 		if tag == "-" {
 			continue
 		}
 
-		var name string
-
-		if len(tag) > 0 {
-			if f.Name[0] < 'A' || f.Name[0] > 'Z' {
+		if f.Name[0] < 'A' || f.Name[0] > 'Z' {
+			if len(tag) > 0 {
 				panic("sql column must be exported field: " + f.Name)
 			}
+			continue
+		}
 
-			if !isSupportType(f.Type) {
-				panic("invalid type: db column " + typ.Name() + ":" + typ.String())
+		isJSON := strings.Contains(tag, "json")
+
+		if !isJSON && !isSupportType(f.Type) {
+			if len(tag) > 0 {
+				panic("invalid type: db column " + typ.Name() + ":" + f.Type.String())
 			}
+			continue
+		}
 
+		var name string
+		if len(tag) > 0 {
 			strs := strings.SplitN(tag, " ", 2)
 			if len(strs) > 0 {
 				if _, found := _sqlKeywords[strs[0]]; !found && gox.IsVariable(strs[0]) {
@@ -136,6 +132,9 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 
 		if strings.Contains(tag, "primary key") {
+			if isJSON {
+				panic("json column can't be primary key")
+			}
 			info.pkNames = append(info.pkNames, name)
 		}
 
@@ -153,6 +152,9 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		info.indexes = append(info.indexes, f.Index)
 		info.names = append(info.names, name)
 		info.nameToIndex[name] = f.Index
+		if isJSON {
+			info.jsonNames = append(info.jsonNames, name)
+		}
 	}
 
 	for _, name := range info.names {
