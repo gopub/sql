@@ -71,12 +71,12 @@ func (t *Table) Insert(record interface{}) error {
 	}
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
+	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.FieldByIndex(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
 	}
 
 	return nil
@@ -88,10 +88,10 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
 
 	var columns []string
 	values := make([]interface{}, 0, len(info.indexes))
-	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
+	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		columns = info.notAINames
-		for _, idx := range info.notAIIndexes {
-			values = append(values, v.FieldByIndex(idx).Interface())
+		for _, name := range info.notAINames {
+			values = append(values, v.FieldByIndex(info.nameToIndex[name]).Interface())
 		}
 	} else {
 		columns = info.names
@@ -115,7 +115,7 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}) {
 func (t *Table) Update(record interface{}) error {
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	if len(info.pkIndexes) == 0 {
+	if len(info.pkNames) == 0 {
 		panic("no primary key. please use Insert operation")
 	}
 
@@ -141,12 +141,12 @@ func (t *Table) Update(record interface{}) error {
 	}
 
 	args := make([]interface{}, 0, len(info.indexes))
-	for _, idx := range info.notPKIndexes {
-		args = append(args, v.FieldByIndex(idx).Interface())
+	for _, name := range info.notPKNames {
+		args = append(args, v.FieldByIndex(info.nameToIndex[name]).Interface())
 	}
 
-	for _, idx := range info.pkIndexes {
-		args = append(args, v.FieldByIndex(idx).Interface())
+	for _, name := range info.pkNames {
+		args = append(args, v.FieldByIndex(info.nameToIndex[name]).Interface())
 	}
 
 	query := buf.String()
@@ -174,24 +174,24 @@ func (t *Table) mysqlSave(record interface{}) error {
 	var buf bytes.Buffer
 	buf.WriteString(query)
 	buf.WriteString(" ON DUPLICATE KEY UPDATE ")
-	for i, c := range info.notPKNames {
+	for i, name := range info.notPKNames {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		buf.WriteString(c)
+		buf.WriteString(name)
 		buf.WriteString(" = ?")
-		values = append(values, v.FieldByIndex(info.notPKIndexes[i]).Interface())
+		values = append(values, v.FieldByIndex(info.nameToIndex[name]).Interface())
 	}
 
 	query = buf.String()
 	gox.LogInfo(query, values)
 	result, err := t.exe.Exec(query, values...)
-	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
+	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.FieldByIndex(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
 	}
 	return err
 }
@@ -203,12 +203,12 @@ func (t *Table) sqliteSave(record interface{}) error {
 	info := getColumnInfo(v.Type())
 	gox.LogInfo(query, values)
 	result, err := t.exe.Exec(query, values...)
-	if len(info.aiIndex) > 0 && v.FieldByIndex(info.aiIndex).Int() == 0 {
+	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
-		v.FieldByIndex(info.aiIndex).SetInt(id)
+		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
 	}
 	return err
 }

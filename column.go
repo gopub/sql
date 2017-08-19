@@ -28,6 +28,7 @@ var _sqlKeywords = map[string]struct{}{
 	"tinyint":        {},
 	"double":         {},
 	"date":           {},
+	"json":           {},
 }
 
 type fieldIndex []int
@@ -57,16 +58,10 @@ type columnInfo struct {
 	names       []string     //column names
 	nameToIndex map[string]fieldIndex
 
-	pkIndexes []fieldIndex //primary key column index
-	pkNames   []string
-
-	aiIndex fieldIndex
-
-	notPKIndexes []fieldIndex
-	notPKNames   []string
-
-	notAIIndexes []fieldIndex
-	notAINames   []string
+	pkNames    []string //primary key column names
+	aiName     string   //auto increment column name
+	notPKNames []string
+	notAINames []string
 }
 
 func getColumnInfo(typ reflect.Type) *columnInfo {
@@ -103,33 +98,19 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 
 		tag := strings.TrimSpace(strings.ToLower(f.Tag.Get("sql")))
-		var name string
-		if len(tag) > 0 {
-			if tag == "-" {
-				continue
-			}
+		if tag == "-" {
+			continue
+		}
 
+		var name string
+
+		if len(tag) > 0 {
 			if f.Name[0] < 'A' || f.Name[0] > 'Z' {
 				panic("sql column must be exported field: " + f.Name)
 			}
 
 			if !isSupportType(f.Type) {
 				panic("invalid type: db column " + typ.Name() + ":" + typ.String())
-			}
-
-			if strings.Contains(tag, "primary key") {
-				info.pkIndexes = append(info.pkIndexes, f.Index)
-			}
-
-			if strings.Contains(tag, "auto_increment") {
-				if len(info.aiIndex) > 0 {
-					panic("duplicate auto_increment")
-				}
-
-				if !f.Type.ConvertibleTo(_int64Type) {
-					panic("not integer: " + f.Type.String())
-				}
-				info.aiIndex = f.Index
 			}
 
 			strs := strings.SplitN(tag, " ", 2)
@@ -154,27 +135,37 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 			}
 		}
 
+		if strings.Contains(tag, "primary key") {
+			info.pkNames = append(info.pkNames, name)
+		}
+
+		if strings.Contains(tag, "auto_increment") {
+			if len(info.aiName) > 0 {
+				panic("duplicate auto_increment")
+			}
+
+			if !f.Type.ConvertibleTo(_int64Type) {
+				panic("not integer: " + f.Type.String())
+			}
+			info.aiName = name
+		}
+
 		info.indexes = append(info.indexes, f.Index)
 		info.names = append(info.names, name)
 		info.nameToIndex[name] = f.Index
 	}
 
-	for i, idx := range info.indexes {
-		name := info.names[i]
-		if searchFieldIndex(info.pkIndexes, idx) < 0 {
-			info.notPKIndexes = append(info.notPKIndexes, idx)
+	for _, name := range info.names {
+		if gox.IndexOfString(info.pkNames, name) < 0 {
 			info.notPKNames = append(info.notPKNames, name)
-		} else {
-			info.pkNames = append(info.pkNames, name)
 		}
 
-		if !reflect.DeepEqual(idx, info.aiIndex) {
-			info.notAIIndexes = append(info.notAIIndexes, idx)
+		if name != info.aiName {
 			info.notAINames = append(info.notAINames, name)
 		}
 	}
 
-	if len(info.aiIndex) >= 0 && (searchFieldIndex(info.pkIndexes, info.aiIndex) != 0 || len(info.pkIndexes) != 1) {
+	if len(info.aiName) > 0 && (gox.IndexOfString(info.pkNames, info.aiName) != 0 || len(info.pkNames) != 1) {
 		panic("auto_increment must be used with primary key")
 	}
 
