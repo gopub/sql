@@ -28,7 +28,7 @@ type Product struct {
 }
 
 type ItemID struct {
-	ID int `sql:"primary key auto_increment"`
+	ID int `sql:"primary key,auto_increment"`
 }
 
 type Item struct {
