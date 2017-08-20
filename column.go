@@ -109,7 +109,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 
 		var name string
 		if len(tag) > 0 {
-			strs := strings.SplitN(tag, ",", 2)
+			strs := strings.Split(tag, ",")
 			if len(strs) > 0 {
 				if _, found := _sqlKeywords[strs[0]]; !found && gox.IsVariable(strs[0]) {
 					name = strs[0]
