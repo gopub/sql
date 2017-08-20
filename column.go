@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+	"github.com/natande/goparam"
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))
@@ -111,7 +112,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		if len(tag) > 0 {
 			strs := strings.Split(tag, ",")
 			if len(strs) > 0 {
-				if _, found := _sqlKeywords[strs[0]]; !found && gox.IsVariable(strs[0]) {
+				if _, ok := _sqlKeywords[strs[0]]; !ok && goparam.MatchPattern(goparam.PatternVariable, strs[0]) {
 					name = strs[0]
 				}
 			}
