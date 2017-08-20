@@ -10,7 +10,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
 1. Column must be field which can be exported
 
         type Product struct {
-    	    ID        int `sql:"primary key auto_increment"`
+    	    ID        int `sql:"primary key,auto_increment"`
     	    Name      string
     	    Price     float32
     	    Text      string `sql:"txt"`
@@ -101,7 +101,7 @@ Save is supported by mysql and sqlite3 drivers. It will insert the record if it 
 ## Support embedded struct
         
         type Product struct {
-            ID        int `sql:"primary key auto_increment"`
+            ID        int `sql:"primary key,auto_increment"`
             Name      string
             Price     float32
             Text      string `sql:"txt"`
