@@ -1,9 +1,11 @@
-package gosql
+package sql
 
 import (
 	"database/sql"
 	"reflect"
 )
+
+var ErrNoRows = sql.ErrNoRows
 
 var _tableNamingType = reflect.TypeOf((*tableNaming)(nil)).Elem()
 

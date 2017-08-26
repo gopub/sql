@@ -1,12 +1,12 @@
-package gosql
+package sql
 
 import (
-	"github.com/natande/goparam"
 	"github.com/natande/gox"
 	"reflect"
 	"strings"
 	"sync"
 	"unsafe"
+	"github.com/natande/goparam"
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))
@@ -112,7 +112,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		if len(tag) > 0 {
 			strs := strings.Split(tag, ",")
 			if len(strs) > 0 {
-				if _, ok := _sqlKeywords[strs[0]]; !ok && goparam.MatchPattern(goparam.PatternVariable, strs[0]) {
+				if _, ok := _sqlKeywords[strs[0]]; !ok && param.MatchPattern(param.PatternVariable, strs[0]) {
 					name = strs[0]
 				}
 			}
