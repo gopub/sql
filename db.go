@@ -2,6 +2,7 @@ package sql
 
 import (
 	"database/sql"
+	"github.com/natande/gox"
 	"reflect"
 )
 
@@ -28,11 +29,24 @@ func Open(driverName, dataSourceName string) (*DB, error) {
 	}, nil
 }
 
+func MustOpen(driverName, dataSourceName string) *DB {
+	db, err := sql.Open(driverName, dataSourceName)
+	if err != nil {
+		panic(err)
+	}
+
+	return &DB{
+		db:         db,
+		driverName: driverName,
+	}
+}
+
 func (d *DB) SQLDB() *sql.DB {
 	return d.db
 }
 
 func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	gox.LogDebug(query, args)
 	return d.db.Exec(query, args...)
 }
 

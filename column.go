@@ -1,12 +1,12 @@
 package sql
 
 import (
+	"github.com/natande/goparam"
 	"github.com/natande/gox"
 	"reflect"
 	"strings"
 	"sync"
 	"unsafe"
-	"github.com/natande/goparam"
 )
 
 var _bytesType = reflect.TypeOf([]byte(nil))

@@ -68,7 +68,7 @@ func (t *Table) Insert(record interface{}) error {
 	if err != nil {
 		return err
 	}
-	gox.LogInfo(query, values)
+	gox.LogDebug(query, values)
 	result, err := t.exe.Exec(query, values...)
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func (t *Table) Update(record interface{}) error {
 	}
 
 	query := buf.String()
-	gox.LogInfo(query, args)
+	gox.LogDebug(query, args)
 	_, err := t.exe.Exec(query, args...)
 	return err
 }
@@ -217,7 +217,7 @@ func (t *Table) mysqlSave(record interface{}) error {
 	}
 
 	query = buf.String()
-	gox.LogInfo(query, values)
+	gox.LogDebug(query, values)
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
@@ -238,7 +238,7 @@ func (t *Table) sqliteSave(record interface{}) error {
 	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	gox.LogInfo(query, values)
+	gox.LogDebug(query, values)
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
@@ -288,7 +288,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogInfo(query, args)
+	gox.LogDebug(query, args)
 	rows, err := t.exe.Query(query, args...)
 	if err != nil {
 		return err
@@ -367,7 +367,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogInfo(query, args)
+	gox.LogDebug(query, args)
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
@@ -417,7 +417,7 @@ func (t *Table) Delete(where string, args ...interface{}) error {
 	buf.WriteString(where)
 
 	query := buf.String()
-	gox.LogInfo(query, args)
+	gox.LogDebug(query, args)
 	_, err := t.exe.Exec(query, args...)
 	return err
 }
@@ -431,7 +431,7 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogInfo(query, args)
+	gox.LogDebug(query, args)
 
 	var count int
 	err := t.exe.QueryRow(query, args...).Scan(&count)
