@@ -12,6 +12,8 @@ type DB struct {
 	driverName string
 }
 
+// Open opens database
+// dataSourceName's format: username:password@tcp(host:port)/dbName
 func Open(driverName, dataSourceName string) (*DB, error) {
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {

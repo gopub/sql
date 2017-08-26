@@ -54,7 +54,7 @@ func getTableNameByType(typ reflect.Type) string {
 		//return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
 	}
 
-	return inflection.Plural(strings.ToLower(typ.Name()))
+	return inflection.Plural(gox.CamelToSnake(typ.Name()))
 }
 
 type Table struct {
