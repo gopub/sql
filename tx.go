@@ -1,6 +1,9 @@
 package sql
 
-import "database/sql"
+import (
+	"database/sql"
+	"github.com/natande/gox"
+)
 
 type Tx struct {
 	tx         *sql.Tx
@@ -41,4 +44,9 @@ func (t *Tx) Select(records interface{}, where string, args ...interface{}) erro
 
 func (t *Tx) SelectOne(record interface{}, where string, args ...interface{}) error {
 	return t.Table(getTableName(record)).SelectOne(record, where, args...)
+}
+
+func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
+	gox.LogDebug(query, args)
+	return t.tx.Exec(query, args...)
 }
