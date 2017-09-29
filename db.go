@@ -85,12 +85,48 @@ func (d *DB) Insert(record interface{}) error {
 	return d.Table(getTableName(record)).Insert(record)
 }
 
+func (d *DB) MultiInsert(values ...interface{}) error {
+	tx, err := d.Begin()
+	for _, v := range values {
+		err = tx.Insert(v)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (d *DB) Update(record interface{}) error {
 	return d.Table(getTableName(record)).Update(record)
 }
 
+func (d *DB) MultiUpdate(values ...interface{}) error {
+	tx, err := d.Begin()
+	for _, v := range values {
+		err = tx.Update(v)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (d *DB) Save(record interface{}) error {
 	return d.Table(getTableName(record)).Save(record)
+}
+
+func (d *DB) MultiSave(values ...interface{}) error {
+	tx, err := d.Begin()
+	for _, v := range values {
+		err = tx.Save(v)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (d *DB) Select(records interface{}, where string, args ...interface{}) error {
