@@ -30,6 +30,7 @@ var _sqlKeywords = map[string]struct{}{
 	"double":         {},
 	"date":           {},
 	"json":           {},
+	"nullable":       {},
 }
 
 type fieldIndex []int
@@ -49,9 +50,10 @@ type columnInfo struct {
 	names       []string     //column names
 	nameToIndex map[string]fieldIndex
 
-	pkNames   []string //primary key column names
-	aiName    string   //auto increment column name
-	jsonNames []string
+	pkNames       []string //primary key column names
+	aiName        string   //auto increment column name
+	jsonNames     []string
+	nullableNames []string
 
 	//for speed
 	notPKNames []string
@@ -100,6 +102,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 
 		isJSON := strings.Contains(tag, "json")
+		nullable := strings.Contains(tag, "nullable")
 
 		if !isJSON && !isSupportType(f.Type) {
 			if len(tag) > 0 {
@@ -155,6 +158,10 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		info.nameToIndex[name] = f.Index
 		if isJSON {
 			info.jsonNames = append(info.jsonNames, name)
+		}
+
+		if nullable {
+			info.nullableNames = append(info.nullableNames, name)
 		}
 	}
 

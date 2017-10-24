@@ -3,12 +3,19 @@ package sql_test
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/natande/gosql"
+	"github.com/natande/gox"
 	"os"
 	"testing"
 	"time"
 )
 
 var _testDB *sql.DB
+
+type User struct {
+	ID    gox.ID `sql:"primary key"`
+	Phone string `sql:"nullable"`
+	Name  string
+}
 
 type Content struct {
 	Title string `json:"title"`
@@ -62,6 +69,12 @@ func TestDB_Exec(t *testing.T) {
 	txt VARCHAR(255) NOT NULL,
 	updated_at BIGINT NOT NULL
 	)`)
+
+	_testDB.Exec(`CREATE TABLE IF NOT EXISTS users(
+    id BIGINT PRIMARY KEY,
+	phone      VARCHAR(20) UNIQUE,
+    name VARCHAR(20) NOT NULL DEFAULT ''
+	)`)
 }
 
 var _testProduct = &Product{
@@ -77,6 +90,40 @@ var _testItem = &Item{
 	Price:     0.3,
 	Text:      &Content{Title: "good"},
 	UpdatedAt: time.Now().Unix(),
+}
+
+func TestDB_Insert(t *testing.T) {
+	u := &User{
+		ID: gox.NewID(),
+	}
+
+	err := _testDB.Insert(u)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	u = &User{
+		ID: gox.NewID(),
+	}
+
+	err = _testDB.Insert(u)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	u = &User{
+		ID:    gox.NewID(),
+		Phone: gox.NewID().ShortString(),
+	}
+
+	err = _testDB.Insert(u)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
 }
 
 func TestExecutor_Insert(t *testing.T) {

@@ -105,9 +105,18 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}, e
 			if err != nil {
 				return "", nil, err
 			}
-			values = append(values, data)
+
+			if (len(data) <= 2 || string(data) == "null") && gox.IndexOfString(info.nullableNames, name) >= 0 {
+				values = append(values, nil)
+			} else {
+				values = append(values, data)
+			}
 		} else {
-			values = append(values, k)
+			if k == reflect.Zero(reflect.TypeOf(k)).Interface() && gox.IndexOfString(info.nullableNames, name) >= 0 {
+				values = append(values, nil)
+			} else {
+				values = append(values, k)
+			}
 		}
 	}
 
