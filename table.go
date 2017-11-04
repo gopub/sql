@@ -57,6 +57,11 @@ func getTableNameByType(typ reflect.Type) string {
 	return inflection.Plural(gox.CamelToSnake(typ.Name()))
 }
 
+func isEmpty(jsonData []byte) bool {
+	dataStr := string(jsonData)
+	return dataStr == "{}" || dataStr == "[]" || dataStr == "null" || dataStr == "NULL"
+}
+
 type Table struct {
 	exe        executor
 	driverName string
@@ -106,7 +111,7 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}, e
 				return "", nil, err
 			}
 
-			if gox.IndexOfString(info.nullableNames, name) >= 0 && (len(data) <= 2 || string(data) == "null") {
+			if gox.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
 				values = append(values, nil)
 			} else {
 				values = append(values, data)
