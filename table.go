@@ -106,13 +106,13 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}, e
 				return "", nil, err
 			}
 
-			if (len(data) <= 2 || string(data) == "null") && gox.IndexOfString(info.nullableNames, name) >= 0 {
+			if gox.IndexOfString(info.nullableNames, name) >= 0 && (len(data) <= 2 || string(data) == "null") {
 				values = append(values, nil)
 			} else {
 				values = append(values, data)
 			}
 		} else {
-			if k == reflect.Zero(reflect.TypeOf(k)).Interface() && gox.IndexOfString(info.nullableNames, name) >= 0 {
+			if gox.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
 				values = append(values, nil)
 			} else {
 				values = append(values, k)
@@ -300,6 +300,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 	gox.LogDebug(query, args)
 	rows, err := t.exe.Query(query, args...)
 	if err != nil {
+		gox.LogError(err)
 		return err
 	}
 	defer rows.Close()
@@ -323,6 +324,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 
 		err = rows.Scan(fields...)
 		if err != nil {
+			gox.LogError(err)
 			return err
 		}
 
@@ -333,6 +335,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 			data := reflect.ValueOf(addr).Elem().Interface()
 			err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 			if err != nil {
+				gox.LogError(err)
 				return err
 			}
 		}

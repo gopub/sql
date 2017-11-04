@@ -165,6 +165,15 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 	}
 
+	if len(info.pkNames) == 0 {
+		for _, name := range info.names {
+			if name == "id" {
+				info.pkNames = []string{name}
+				break
+			}
+		}
+	}
+
 	for _, name := range info.names {
 		if gox.IndexOfString(info.pkNames, name) < 0 {
 			info.notPKNames = append(info.notPKNames, name)
