@@ -71,11 +71,13 @@ type Table struct {
 func (t *Table) Insert(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
+		gox.LogError(err)
 		return err
 	}
 	gox.LogDebug(query, values)
 	result, err := t.exe.Exec(query, values...)
 	if err != nil {
+		gox.LogError(err)
 		return err
 	}
 	v := getStructValue(record)
@@ -83,6 +85,7 @@ func (t *Table) Insert(record interface{}) error {
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
+			gox.LogError(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -203,6 +206,7 @@ func (t *Table) Save(record interface{}) error {
 func (t *Table) mysqlSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
+		gox.LogError(err)
 		return err
 	}
 
@@ -222,6 +226,7 @@ func (t *Table) mysqlSave(record interface{}) error {
 		if gox.IndexOfString(info.jsonNames, name) >= 0 {
 			data, err := json.Marshal(k)
 			if err != nil {
+				gox.LogError(err)
 				return err
 			}
 			values = append(values, data)
@@ -236,6 +241,7 @@ func (t *Table) mysqlSave(record interface{}) error {
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
+			gox.LogError(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -246,6 +252,7 @@ func (t *Table) mysqlSave(record interface{}) error {
 func (t *Table) sqliteSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
+		gox.LogError(err)
 		return err
 	}
 
@@ -257,6 +264,7 @@ func (t *Table) sqliteSave(record interface{}) error {
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
+			gox.LogError(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -403,6 +411,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		data := reflect.ValueOf(addr).Elem().Interface()
 		err = json.Unmarshal(data.([]byte), v.FieldByIndex(idx).Addr().Interface())
 		if err != nil {
+			gox.LogError(err)
 			return err
 		}
 	}
@@ -436,6 +445,9 @@ func (t *Table) Delete(where string, args ...interface{}) error {
 	query := buf.String()
 	gox.LogDebug(query, args)
 	_, err := t.exe.Exec(query, args...)
+	if err != nil {
+		gox.LogError(err)
+	}
 	return err
 }
 
@@ -453,6 +465,7 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 	var count int
 	err := t.exe.QueryRow(query, args...).Scan(&count)
 	if err != nil {
+		gox.LogError(err)
 		return 0, err
 	}
 
