@@ -215,23 +215,25 @@ func (t *Table) mysqlSave(record interface{}) error {
 
 	var buf bytes.Buffer
 	buf.WriteString(query)
-	buf.WriteString(" ON DUPLICATE KEY UPDATE ")
-	for i, name := range info.notPKNames {
-		if i > 0 {
-			buf.WriteString(", ")
-		}
-		buf.WriteString(name)
-		buf.WriteString(" = ?")
-		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
-		if gox.IndexOfString(info.jsonNames, name) >= 0 {
-			data, err := json.Marshal(k)
-			if err != nil {
-				gox.LogError(err)
-				return err
+	if len(info.pkNames) < len(info.nameToIndex) {
+		buf.WriteString(" ON DUPLICATE KEY UPDATE ")
+		for i, name := range info.notPKNames {
+			if i > 0 {
+				buf.WriteString(", ")
 			}
-			values = append(values, data)
-		} else {
-			values = append(values, k)
+			buf.WriteString(name)
+			buf.WriteString(" = ?")
+			k := v.FieldByIndex(info.nameToIndex[name]).Interface()
+			if gox.IndexOfString(info.jsonNames, name) >= 0 {
+				data, err := json.Marshal(k)
+				if err != nil {
+					gox.LogError(err)
+					return err
+				}
+				values = append(values, data)
+			} else {
+				values = append(values, k)
+			}
 		}
 	}
 
@@ -404,6 +406,11 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		}
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
+	if err != nil {
+		gox.LogError(err)
+		return err
+	}
+
 	for _, name := range info.jsonNames {
 		idx := info.nameToIndex[name]
 		i := gox.IndexOfString(info.names, name)
@@ -415,6 +422,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 			return err
 		}
 	}
+
 	if err == nil {
 		rv.Elem().Set(ev)
 	}
