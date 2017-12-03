@@ -47,6 +47,16 @@ func (t *Tx) SelectOne(record interface{}, where string, args ...interface{}) er
 }
 
 func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
-	gox.LogDebug(query, args)
+	if gox.LogLevel <= gox.LogLevelDebug {
+		readableArgs := make([]interface{}, len(args))
+		for i, a := range args {
+			if b, ok := a.([]byte); ok {
+				readableArgs[i] = string(b)
+			} else {
+				readableArgs[i] = a
+			}
+		}
+		gox.LogDebug(query, readableArgs)
+	}
 	return t.tx.Exec(query, args...)
 }
