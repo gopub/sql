@@ -1,8 +1,10 @@
 package sql
 
-import "github.com/natande/gox"
+import (
+	"github.com/natande/gox"
+)
 
-func printArgs(query string, args ...interface{}) {
+func toReadableArgs(args []interface{}) []interface{} {
 	if gox.LogLevel <= gox.LogLevelDebug {
 		readableArgs := make([]interface{}, len(args))
 		for i, a := range args {
@@ -12,6 +14,7 @@ func printArgs(query string, args ...interface{}) {
 				readableArgs[i] = a
 			}
 		}
-		gox.LogDebug(query, readableArgs)
+		return readableArgs
 	}
+	return args
 }

@@ -2,6 +2,7 @@ package sql
 
 import (
 	"database/sql"
+	"github.com/natande/gox"
 )
 
 type Tx struct {
@@ -46,6 +47,6 @@ func (t *Tx) SelectOne(record interface{}, where string, args ...interface{}) er
 }
 
 func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
-	printArgs(query, args)
+	gox.LogDebug(query, toReadableArgs(args))
 	return t.tx.Exec(query, args...)
 }
