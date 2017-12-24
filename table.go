@@ -107,25 +107,11 @@ func (t *Table) prepareInsertQuery(record interface{}) (string, []interface{}, e
 	}
 
 	for _, name := range columns {
-		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
-		if gox.IndexOfString(info.jsonNames, name) >= 0 {
-			data, err := json.Marshal(k)
-			if err != nil {
-				return "", nil, err
-			}
-
-			if gox.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
-				values = append(values, nil)
-			} else {
-				values = append(values, data)
-			}
-		} else {
-			if gox.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
-				values = append(values, nil)
-			} else {
-				values = append(values, k)
-			}
+		fv, err := t.getFieldValueByName(v, info, name)
+		if err != nil {
+			return "", nil, err
 		}
+		values = append(values, fv)
 	}
 
 	var buf bytes.Buffer
@@ -170,16 +156,11 @@ func (t *Table) Update(record interface{}) error {
 
 	args := make([]interface{}, 0, len(info.indexes))
 	for _, name := range info.notPKNames {
-		k := v.FieldByIndex(info.nameToIndex[name]).Interface()
-		if gox.IndexOfString(info.jsonNames, name) >= 0 {
-			data, err := json.Marshal(k)
-			if err != nil {
-				return err
-			}
-			args = append(args, data)
-		} else {
-			args = append(args, k)
+		fv, err := t.getFieldValueByName(v, info, name)
+		if err != nil {
+			return err
 		}
+		args = append(args, fv)
 	}
 
 	for _, name := range info.pkNames {
@@ -223,17 +204,11 @@ func (t *Table) mysqlSave(record interface{}) error {
 			}
 			buf.WriteString(name)
 			buf.WriteString(" = ?")
-			k := v.FieldByIndex(info.nameToIndex[name]).Interface()
-			if gox.IndexOfString(info.jsonNames, name) >= 0 {
-				data, err := json.Marshal(k)
-				if err != nil {
-					gox.LogError(err)
-					return err
-				}
-				values = append(values, data)
-			} else {
-				values = append(values, k)
+			fv, err := t.getFieldValueByName(v, info, name)
+			if err != nil {
+				return err
 			}
+			values = append(values, fv)
 		}
 	}
 
@@ -478,4 +453,26 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 	}
 
 	return count, nil
+}
+
+func (t *Table) getFieldValueByName(item reflect.Value, info *columnInfo, name string) (interface{}, error) {
+	k := item.FieldByIndex(info.nameToIndex[name]).Interface()
+	if gox.IndexOfString(info.jsonNames, name) >= 0 {
+		data, err := json.Marshal(k)
+		if err != nil {
+			return nil, err
+		}
+
+		if gox.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
+			return nil, nil
+		} else {
+			return data, nil
+		}
+	} else {
+		if gox.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
+			return nil, nil
+		} else {
+			return k, nil
+		}
+	}
 }
