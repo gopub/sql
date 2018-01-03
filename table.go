@@ -7,6 +7,8 @@ import (
 	"github.com/natande/gox"
 	"reflect"
 	"strings"
+	"database/sql"
+	"fmt"
 )
 
 type tableNaming interface {
@@ -307,6 +309,24 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 			if gox.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
 				var data []byte
 				fields[i] = &data
+			} else if gox.IndexOfString(fi.nullableNames, fi.names[i]) >= 0 {
+				switch elem.FieldByIndex(idx).Kind() {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					var v sql.NullInt64
+					fields[i] = &v
+				case reflect.Bool:
+					var b sql.NullBool
+					fields[i] = &b
+				case reflect.Float32, reflect.Float64:
+					var v sql.NullFloat64
+					fields[i] = &v
+				case reflect.String:
+					var v sql.NullString
+					fields[i] = &v
+				default:
+					panic("invalid nullable type" + fmt.Sprint(elem.FieldByIndex(idx).Type()))
+				}
 			} else {
 				fields[i] = elem.FieldByIndex(idx).Addr().Interface()
 			}
@@ -330,6 +350,32 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 			}
 		}
 
+		for _, name := range fi.nullableNames {
+			idx := fi.nameToIndex[name]
+			i := gox.IndexOfString(fi.names, name)
+			addr := fields[i]
+			switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
+			case sql.NullString:
+				if v.Valid {
+					elem.FieldByIndex(idx).SetString(v.String)
+				}
+			case sql.NullFloat64:
+				if v.Valid {
+					elem.FieldByIndex(idx).SetFloat(v.Float64)
+				}
+			case sql.NullBool:
+				if v.Valid {
+					elem.FieldByIndex(idx).SetBool(v.Bool)
+				}
+			case sql.NullInt64:
+				if v.Valid {
+					elem.FieldByIndex(idx).SetInt(v.Int64)
+				}
+			default:
+				panic("invalid type:" + fmt.Sprint(v))
+			}
+		}
+
 		if isPtr {
 			sliceValue = reflect.Append(sliceValue, ptrToElem)
 		} else {
@@ -348,16 +394,16 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	//Store result in ev. If failed, don't change record's value
 	ev := gox.DeepNew(rv.Elem().Type()).Elem()
-	v := ev
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	elem := ev
+	if elem.Kind() == reflect.Ptr {
+		elem = elem.Elem()
 	}
 
-	if v.Kind() != reflect.Struct {
+	if elem.Kind() != reflect.Struct {
 		panic("not pointer to a struct")
 	}
 
-	info := getColumnInfo(v.Type())
+	info := getColumnInfo(elem.Type())
 
 	var buf bytes.Buffer
 	buf.WriteString("SELECT ")
@@ -376,8 +422,26 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		if gox.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
 			var data []byte
 			fieldAddrs[i] = &data
+		} else if gox.IndexOfString(info.nullableNames, info.names[i]) >= 0 {
+			switch elem.FieldByIndex(idx).Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				var v sql.NullInt64
+				fieldAddrs[i] = &v
+			case reflect.Bool:
+				var b sql.NullBool
+				fieldAddrs[i] = &b
+			case reflect.Float32, reflect.Float64:
+				var v sql.NullFloat64
+				fieldAddrs[i] = &v
+			case reflect.String:
+				var v sql.NullString
+				fieldAddrs[i] = &v
+			default:
+				panic("invalid nullable type" + fmt.Sprint(elem.FieldByIndex(idx).Type()))
+			}
 		} else {
-			fieldAddrs[i] = v.FieldByIndex(idx).Addr().Interface()
+			fieldAddrs[i] = elem.FieldByIndex(idx).Addr().Interface()
 		}
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
@@ -391,10 +455,36 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		i := gox.IndexOfString(info.names, name)
 		addr := fieldAddrs[i]
 		data := reflect.ValueOf(addr).Elem().Interface()
-		err = json.Unmarshal(data.([]byte), v.FieldByIndex(idx).Addr().Interface())
+		err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 		if err != nil {
 			gox.LogError(err)
 			return err
+		}
+	}
+
+	for _, name := range info.nullableNames {
+		idx := info.nameToIndex[name]
+		i := gox.IndexOfString(info.names, name)
+		addr := fieldAddrs[i]
+		switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
+		case sql.NullString:
+			if v.Valid {
+				elem.FieldByIndex(idx).SetString(v.String)
+			}
+		case sql.NullFloat64:
+			if v.Valid {
+				elem.FieldByIndex(idx).SetFloat(v.Float64)
+			}
+		case sql.NullBool:
+			if v.Valid {
+				elem.FieldByIndex(idx).SetBool(v.Bool)
+			}
+		case sql.NullInt64:
+			if v.Valid {
+				elem.FieldByIndex(idx).SetInt(v.Int64)
+			}
+		default:
+			panic("invalid type:" + fmt.Sprint(v))
 		}
 	}
 

@@ -46,13 +46,22 @@ func (f fieldIndex) Equal(v fieldIndex) bool {
 }
 
 type columnInfo struct {
-	indexes     []fieldIndex //indexes of fields without tag db:"-"
-	names       []string     //column names
+	//indexes of fields without tag db:"-"
+	indexes []fieldIndex
+
+	//column names
+	names []string
+
 	nameToIndex map[string]fieldIndex
 
-	pkNames       []string //primary key column names
-	aiName        string   //auto increment column name
-	jsonNames     []string
+	//primary key column names
+	pkNames []string
+
+	//auto increment column name
+	aiName string
+
+	jsonNames []string
+
 	nullableNames []string
 
 	//for speed

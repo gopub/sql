@@ -43,6 +43,7 @@ type Item struct {
 	Name      string
 	Price     float32
 	Text      *Content `sql:"txt,json"`
+	Email     string   `sql:"nullable"`
 	UpdatedAt int64
 }
 
@@ -61,12 +62,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestDB_Exec(t *testing.T) {
-	//_testDB.MustExec("drop table products")
+	_testDB.MustExec("drop table products")
 	_testDB.Exec(`CREATE TABLE IF NOT EXISTS products(
 	id INT PRIMARY KEY AUTO_INCREMENT,
 	name VARCHAR(20) NOT NULL,
 	price DOUBLE NOT NULL,
 	txt VARCHAR(255) NOT NULL,
+	email VARCHAR(255),
 	updated_at BIGINT NOT NULL
 	)`)
 
