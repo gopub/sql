@@ -1,8 +1,8 @@
 package sql
 
 import (
-	"github.com/natande/goparam"
-	"github.com/natande/gox"
+	"github.com/gopub/mapper"
+	"github.com/gopub/utils"
 	"reflect"
 	"strings"
 	"sync"
@@ -124,14 +124,14 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		if len(tag) > 0 {
 			strs := strings.Split(tag, ",")
 			if len(strs) > 0 {
-				if _, ok := _sqlKeywords[strs[0]]; !ok && param.MatchPattern(param.PatternVariable, strs[0]) {
+				if _, ok := _sqlKeywords[strs[0]]; !ok && mapper.MatchPattern(mapper.PatternVariable, strs[0]) {
 					name = strs[0]
 				}
 			}
 		}
 
 		if len(name) == 0 {
-			name = gox.CamelToSnake(f.Name)
+			name = utils.CamelToSnake(f.Name)
 		}
 
 		if idx, found := info.nameToIndex[name]; found {
@@ -184,7 +184,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 	}
 
 	for _, name := range info.names {
-		if gox.IndexOfString(info.pkNames, name) < 0 {
+		if utils.IndexOfString(info.pkNames, name) < 0 {
 			info.notPKNames = append(info.notPKNames, name)
 		}
 
@@ -193,7 +193,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 	}
 
-	if len(info.aiName) > 0 && (gox.IndexOfString(info.pkNames, info.aiName) != 0 || len(info.pkNames) != 1) {
+	if len(info.aiName) > 0 && (utils.IndexOfString(info.pkNames, info.aiName) != 0 || len(info.pkNames) != 1) {
 		panic("auto_increment must be used with primary key")
 	}
 

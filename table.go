@@ -2,13 +2,14 @@ package sql
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"fmt"
+	"github.com/gopub/utils"
 	"github.com/jinzhu/inflection"
-	"github.com/natande/gox"
+	"log"
 	"reflect"
 	"strings"
-	"database/sql"
-	"fmt"
 )
 
 type tableNaming interface {
@@ -56,7 +57,7 @@ func getTableNameByType(typ reflect.Type) string {
 		//return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
 	}
 
-	return inflection.Plural(gox.CamelToSnake(typ.Name()))
+	return inflection.Plural(utils.CamelToSnake(typ.Name()))
 }
 
 func isEmpty(jsonData []byte) bool {
@@ -73,13 +74,13 @@ type Table struct {
 func (t *Table) Insert(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
-	gox.LogDebug(query, toReadableArgs(values))
+	//log.Println(query, toReadableArgs(values))
 	result, err := t.exe.Exec(query, values...)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
 	v := getStructValue(record)
@@ -87,7 +88,7 @@ func (t *Table) Insert(record interface{}) error {
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			gox.LogError(err)
+			log.Println(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -170,7 +171,7 @@ func (t *Table) Update(record interface{}) error {
 	}
 
 	query := buf.String()
-	gox.LogDebug(query, toReadableArgs(args))
+	//log.Println(query, toReadableArgs(args))
 	_, err := t.exe.Exec(query, args...)
 	return err
 }
@@ -189,7 +190,7 @@ func (t *Table) Save(record interface{}) error {
 func (t *Table) mysqlSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
 
@@ -215,12 +216,12 @@ func (t *Table) mysqlSave(record interface{}) error {
 	}
 
 	query = buf.String()
-	gox.LogDebug(query, toReadableArgs(values))
+	//log.Println(query, toReadableArgs(values))
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			gox.LogError(err)
+			log.Println(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -231,19 +232,19 @@ func (t *Table) mysqlSave(record interface{}) error {
 func (t *Table) sqliteSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
 
 	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	gox.LogDebug(query, toReadableArgs(values))
+	//log.Println(query, toReadableArgs(values))
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			gox.LogError(err)
+			log.Println(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -289,10 +290,10 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogDebug(query, toReadableArgs(args))
+	//log.Println(query, toReadableArgs(args))
 	rows, err := t.exe.Query(query, args...)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
 	defer rows.Close()
@@ -303,13 +304,13 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 	sliceValue := v.Elem()
 	fields := make([]interface{}, len(fi.indexes))
 	for rows.Next() {
-		ptrToElem := gox.DeepNew(elemType)
+		ptrToElem := utils.DeepNew(elemType)
 		elem := ptrToElem.Elem()
 		for i, idx := range fi.indexes {
-			if gox.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
+			if utils.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
 				var data []byte
 				fields[i] = &data
-			} else if gox.IndexOfString(fi.nullableNames, fi.names[i]) >= 0 {
+			} else if utils.IndexOfString(fi.nullableNames, fi.names[i]) >= 0 {
 				switch elem.FieldByIndex(idx).Kind() {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -334,25 +335,25 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 
 		err = rows.Scan(fields...)
 		if err != nil {
-			gox.LogError(err)
+			log.Println(err)
 			return err
 		}
 
 		for _, name := range fi.jsonNames {
 			idx := fi.nameToIndex[name]
-			i := gox.IndexOfString(fi.names, name)
+			i := utils.IndexOfString(fi.names, name)
 			addr := fields[i]
 			data := reflect.ValueOf(addr).Elem().Interface()
 			err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 			if err != nil {
-				gox.LogError(err)
+				log.Println(err)
 				return err
 			}
 		}
 
 		for _, name := range fi.nullableNames {
 			idx := fi.nameToIndex[name]
-			i := gox.IndexOfString(fi.names, name)
+			i := utils.IndexOfString(fi.names, name)
 			addr := fields[i]
 			switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
 			case sql.NullString:
@@ -393,7 +394,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 	}
 
 	//Store result in ev. If failed, don't change record's value
-	ev := gox.DeepNew(rv.Elem().Type()).Elem()
+	ev := utils.DeepNew(rv.Elem().Type()).Elem()
 	elem := ev
 	if elem.Kind() == reflect.Ptr {
 		elem = elem.Elem()
@@ -415,14 +416,14 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogDebug(query, toReadableArgs(args))
+	//log.Println(query, toReadableArgs(args))
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
-		if gox.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
+		if utils.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
 			var data []byte
 			fieldAddrs[i] = &data
-		} else if gox.IndexOfString(info.nullableNames, info.names[i]) >= 0 {
+		} else if utils.IndexOfString(info.nullableNames, info.names[i]) >= 0 {
 			switch elem.FieldByIndex(idx).Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -446,25 +447,25 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return err
 	}
 
 	for _, name := range info.jsonNames {
 		idx := info.nameToIndex[name]
-		i := gox.IndexOfString(info.names, name)
+		i := utils.IndexOfString(info.names, name)
 		addr := fieldAddrs[i]
 		data := reflect.ValueOf(addr).Elem().Interface()
 		err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 		if err != nil {
-			gox.LogError(err)
+			log.Println(err)
 			return err
 		}
 	}
 
 	for _, name := range info.nullableNames {
 		idx := info.nameToIndex[name]
-		i := gox.IndexOfString(info.names, name)
+		i := utils.IndexOfString(info.names, name)
 		addr := fieldAddrs[i]
 		switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
 		case sql.NullString:
@@ -516,10 +517,10 @@ func (t *Table) Delete(where string, args ...interface{}) error {
 	buf.WriteString(where)
 
 	query := buf.String()
-	gox.LogDebug(query, toReadableArgs(args))
+	//log.Println(query, toReadableArgs(args))
 	_, err := t.exe.Exec(query, args...)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 	}
 	return err
 }
@@ -533,12 +534,12 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	gox.LogDebug(query, toReadableArgs(args))
+	//log.Println(query, toReadableArgs(args))
 
 	var count int
 	err := t.exe.QueryRow(query, args...).Scan(&count)
 	if err != nil {
-		gox.LogError(err)
+		log.Println(err)
 		return 0, err
 	}
 
@@ -547,19 +548,19 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 
 func (t *Table) getFieldValueByName(item reflect.Value, info *columnInfo, name string) (interface{}, error) {
 	k := item.FieldByIndex(info.nameToIndex[name]).Interface()
-	if gox.IndexOfString(info.jsonNames, name) >= 0 {
+	if utils.IndexOfString(info.jsonNames, name) >= 0 {
 		data, err := json.Marshal(k)
 		if err != nil {
 			return nil, err
 		}
 
-		if gox.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
+		if utils.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
 			return nil, nil
 		} else {
 			return data, nil
 		}
 	} else {
-		if gox.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
+		if utils.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
 			return nil, nil
 		} else {
 			return k, nil
