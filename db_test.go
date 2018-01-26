@@ -2,8 +2,8 @@ package sql_test
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/natande/gosql"
-	"github.com/natande/gox"
+	"github.com/gopub/sql"
+	"github.com/gopub/types"
 	"os"
 	"testing"
 	"time"
@@ -12,8 +12,8 @@ import (
 var _testDB *sql.DB
 
 type User struct {
-	ID    gox.ID `sql:"primary key"`
-	Phone string `sql:"nullable"`
+	ID    types.ID `sql:"primary key"`
+	Phone string   `sql:"nullable"`
 	Name  string
 }
 
@@ -96,7 +96,7 @@ var _testItem = &Item{
 
 func TestDB_Insert(t *testing.T) {
 	u := &User{
-		ID: gox.NewID(),
+		ID: types.NewID(),
 	}
 
 	err := _testDB.Insert(u)
@@ -106,7 +106,7 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID: gox.NewID(),
+		ID: types.NewID(),
 	}
 
 	err = _testDB.Insert(u)
@@ -116,8 +116,8 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID:    gox.NewID(),
-		Phone: gox.NewID().ShortString(),
+		ID:    types.NewID(),
+		Phone: types.NewID().ShortString(),
 	}
 
 	err = _testDB.Insert(u)

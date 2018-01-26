@@ -2,7 +2,7 @@ package sql
 
 import (
 	"database/sql"
-	"github.com/natande/gox"
+	"github.com/gopub/log"
 	"reflect"
 )
 
@@ -46,7 +46,7 @@ func (d *DB) SQLDB() *sql.DB {
 }
 
 func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	gox.LogDebug(query, args)
+	log.Debug(query, args)
 	return d.db.Exec(query, args...)
 }
 

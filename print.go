@@ -1,11 +1,11 @@
 package sql
 
 import (
-	"github.com/natande/gox"
+	"github.com/gopub/log"
 )
 
 func toReadableArgs(args []interface{}) []interface{} {
-	if gox.LogLevel <= gox.LogLevelDebug {
+	if log.DebugLevel >= log.GetLevel() {
 		readableArgs := make([]interface{}, len(args))
 		for i, a := range args {
 			if b, ok := a.([]byte); ok {
