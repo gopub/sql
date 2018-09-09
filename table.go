@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/gopub/log"
 	"github.com/gopub/utils"
 	"github.com/jinzhu/inflection"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -74,13 +74,16 @@ type Table struct {
 func (t *Table) Insert(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
-	//log.Println(query, toReadableArgs(values))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(values))
+	}
 	result, err := t.exe.Exec(query, values...)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
 	v := getStructValue(record)
@@ -88,7 +91,7 @@ func (t *Table) Insert(record interface{}) error {
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -171,7 +174,9 @@ func (t *Table) Update(record interface{}) error {
 	}
 
 	query := buf.String()
-	//log.Println(query, toReadableArgs(args))
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(args))
+	}
 	_, err := t.exe.Exec(query, args...)
 	return err
 }
@@ -190,7 +195,7 @@ func (t *Table) Save(record interface{}) error {
 func (t *Table) mysqlSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -216,12 +221,16 @@ func (t *Table) mysqlSave(record interface{}) error {
 	}
 
 	query = buf.String()
-	//log.Println(query, toReadableArgs(values))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(values))
+	}
+
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -232,19 +241,23 @@ func (t *Table) mysqlSave(record interface{}) error {
 func (t *Table) sqliteSave(record interface{}) error {
 	query, values, err := t.prepareInsertQuery(record)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
 
 	query = strings.Replace(query, "INSERT INTO", "INSERT OR REPLACE INTO", 1)
 	v := getStructValue(record)
 	info := getColumnInfo(v.Type())
-	//log.Println(query, toReadableArgs(values))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(values))
+	}
+
 	result, err := t.exe.Exec(query, values...)
 	if len(info.aiName) > 0 && v.FieldByIndex(info.nameToIndex[info.aiName]).Int() == 0 {
 		id, err := result.LastInsertId()
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return err
 		}
 		v.FieldByIndex(info.nameToIndex[info.aiName]).SetInt(id)
@@ -290,10 +303,14 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	//log.Println(query, toReadableArgs(args))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(args))
+	}
+
 	rows, err := t.exe.Query(query, args...)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
 	defer rows.Close()
@@ -335,7 +352,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 
 		err = rows.Scan(fields...)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return err
 		}
 
@@ -346,7 +363,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 			data := reflect.ValueOf(addr).Elem().Interface()
 			err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 				return err
 			}
 		}
@@ -416,7 +433,10 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	//log.Println(query, toReadableArgs(args))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(args))
+	}
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
@@ -447,7 +467,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -458,7 +478,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 		data := reflect.ValueOf(addr).Elem().Interface()
 		err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return err
 		}
 	}
@@ -517,10 +537,14 @@ func (t *Table) Delete(where string, args ...interface{}) error {
 	buf.WriteString(where)
 
 	query := buf.String()
-	//log.Println(query, toReadableArgs(args))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(args))
+	}
+
 	_, err := t.exe.Exec(query, args...)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	return err
 }
@@ -534,12 +558,15 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 		buf.WriteString(where)
 	}
 	query := buf.String()
-	//log.Println(query, toReadableArgs(args))
+
+	if log.GetLevel() <= log.DebugLevel {
+		log.Debug(query, toReadableArgs(args))
+	}
 
 	var count int
 	err := t.exe.QueryRow(query, args...).Scan(&count)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return 0, err
 	}
 
