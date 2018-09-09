@@ -204,20 +204,18 @@ func (t *Table) mysqlSave(record interface{}) error {
 
 	var buf bytes.Buffer
 	buf.WriteString(query)
-	if len(info.pkNames) < len(info.nameToIndex) {
-		buf.WriteString(" ON DUPLICATE KEY UPDATE ")
-		for i, name := range info.notPKNames {
-			if i > 0 {
-				buf.WriteString(", ")
-			}
-			buf.WriteString(name)
-			buf.WriteString(" = ?")
-			fv, err := t.getFieldValueByName(v, info, name)
-			if err != nil {
-				return err
-			}
-			values = append(values, fv)
+	buf.WriteString(" ON DUPLICATE KEY UPDATE ")
+	for i, name := range info.names {
+		if i > 0 {
+			buf.WriteString(", ")
 		}
+		buf.WriteString(name)
+		buf.WriteString(" = ?")
+		fv, err := t.getFieldValueByName(v, info, name)
+		if err != nil {
+			return err
+		}
+		values = append(values, fv)
 	}
 
 	query = buf.String()
