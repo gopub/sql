@@ -96,7 +96,7 @@ var _testItem = &Item{
 
 func TestDB_Insert(t *testing.T) {
 	u := &User{
-		ID: types.NewID(),
+		ID: types.NextID(),
 	}
 
 	err := _testDB.Insert(u)
@@ -106,7 +106,7 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID: types.NewID(),
+		ID: types.NextID(),
 	}
 
 	err = _testDB.Insert(u)
@@ -116,8 +116,8 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID:    types.NewID(),
-		Phone: types.NewID().ShortString(),
+		ID:    types.NextID(),
+		Phone: types.NextID().ShortString(),
 	}
 
 	err = _testDB.Insert(u)
