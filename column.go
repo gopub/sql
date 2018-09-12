@@ -205,8 +205,8 @@ func getAllFields(typ reflect.Type) []reflect.StructField {
 				t = t.Elem()
 			}
 			subFields := getAllFields(t)
-			for i := range subFields {
-				subFields[i].Index = append([]int{i}, subFields[i].Index...)
+			for j := range subFields {
+				subFields[j].Index = append([]int{i}, subFields[j].Index...)
 			}
 			fields = append(fields, subFields...)
 		} else {
