@@ -465,7 +465,9 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 	}
 	err := t.exe.QueryRow(query, args...).Scan(fieldAddrs...)
 	if err != nil {
-		log.Error(err)
+		if err != sql.ErrNoRows {
+			log.Error(err)
+		}
 		return err
 	}
 
