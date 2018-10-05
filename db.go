@@ -73,7 +73,12 @@ func (d *DB) Close() error {
 	return d.db.Close()
 }
 
-func (d *DB) Table(name string) *Table {
+func (d *DB) Table(nameOrRecord interface{}) *Table {
+	name, ok := nameOrRecord.(string)
+	if !ok {
+		name = getTableName(nameOrRecord)
+	}
+
 	return &Table{
 		exe:        d.db,
 		driverName: d.driverName,
