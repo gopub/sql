@@ -53,7 +53,7 @@ func (i Item) TableName() string {
 
 func TestMain(m *testing.M) {
 	var err error
-	_testDB, err = sql.Open("mysql", "root:7815@tcp(localhost:3306)/test")
+	_testDB, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/test")
 	if err != nil {
 		panic(err)
 	}

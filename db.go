@@ -2,6 +2,7 @@ package sql
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/gopub/log"
 	"reflect"
 )
@@ -90,10 +91,15 @@ func (d *DB) Insert(record interface{}) error {
 	return d.Table(getTableName(record)).Insert(record)
 }
 
-func (d *DB) MultiInsert(values ...interface{}) error {
+func (d *DB) MultiInsert(values interface{}) error {
+	l := reflect.ValueOf(values)
+	if l.Kind() != reflect.Slice {
+		return errors.New("not slice")
+	}
+
 	tx, err := d.Begin()
-	for _, v := range values {
-		err = tx.Insert(v)
+	for i := 0; i < l.Len(); i++ {
+		err = tx.Insert(l.Index(i).Interface())
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -106,10 +112,15 @@ func (d *DB) Update(record interface{}) error {
 	return d.Table(getTableName(record)).Update(record)
 }
 
-func (d *DB) MultiUpdate(values ...interface{}) error {
+func (d *DB) MultiUpdate(values interface{}) error {
+	l := reflect.ValueOf(values)
+	if l.Kind() != reflect.Slice {
+		return errors.New("not slice")
+	}
+
 	tx, err := d.Begin()
-	for _, v := range values {
-		err = tx.Update(v)
+	for i := 0; i < l.Len(); i++ {
+		err = tx.Update(l.Index(i).Interface())
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -122,10 +133,15 @@ func (d *DB) Save(record interface{}) error {
 	return d.Table(getTableName(record)).Save(record)
 }
 
-func (d *DB) MultiSave(values ...interface{}) error {
+func (d *DB) MultiSave(values interface{}) error {
+	l := reflect.ValueOf(values)
+	if l.Kind() != reflect.Slice {
+		return errors.New("not slice")
+	}
+
 	tx, err := d.Begin()
-	for _, v := range values {
-		err = tx.Save(v)
+	for i := 0; i < l.Len(); i++ {
+		err = tx.Save(l.Index(i).Interface())
 		if err != nil {
 			tx.Rollback()
 			return err
