@@ -205,7 +205,11 @@ func (t *Table) mysqlSave(record interface{}) error {
 	var buf bytes.Buffer
 	buf.WriteString(query)
 	buf.WriteString(" ON DUPLICATE KEY UPDATE ")
-	for i, name := range info.names {
+	for i, name := range info.notPKNames {
+		if name == "created_at" {
+			continue
+		}
+
 		if i > 0 {
 			buf.WriteString(", ")
 		}
