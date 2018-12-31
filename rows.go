@@ -129,3 +129,7 @@ package sql
 //	return err
 //}
 //
+
+type RowScanner interface {
+	Scan(dest ...interface{}) error
+}
