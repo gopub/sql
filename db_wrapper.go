@@ -15,9 +15,9 @@ type DBWrapper struct {
 	driverName string
 }
 
-// Open opens database
+// NewDBWrapper opens database
 // dataSourceName's format: username:password@tcp(host:port)/dbName
-func Open(driverName, dataSourceName string) (*DBWrapper, error) {
+func NewDBWrapper(driverName, dataSourceName string) (*DBWrapper, error) {
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
@@ -27,18 +27,6 @@ func Open(driverName, dataSourceName string) (*DBWrapper, error) {
 		db:         db,
 		driverName: driverName,
 	}, nil
-}
-
-func MustOpen(driverName, dataSourceName string) *DBWrapper {
-	db, err := sql.Open(driverName, dataSourceName)
-	if err != nil {
-		panic(err)
-	}
-
-	return &DBWrapper{
-		db:         db,
-		driverName: driverName,
-	}
 }
 
 func (d *DBWrapper) DB() *sql.DB {
