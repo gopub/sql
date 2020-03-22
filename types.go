@@ -3,7 +3,6 @@ package sql
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"github.com/gopub/conv"
 	"github.com/gopub/sql/pg"
@@ -23,24 +22,14 @@ func (i *BigInt) Scan(src interface{}) error {
 		return nil
 	}
 
-	var s string
-	var ok bool
-	s, ok = src.(string)
-	if !ok {
-		var b []byte
-		b, ok = src.([]byte)
-		if ok {
-			s = string(b)
-		}
+	s, err := conv.ToString(src)
+	if err != nil {
+		return fmt.Errorf("cannot parse %v into big.Int", src)
 	}
 
+	_, ok := (*big.Int)(i).SetString(s, 10)
 	if !ok {
-		return fmt.Errorf("failed to parse %v into big.Int", src)
-	}
-
-	_, ok = (*big.Int)(i).SetString(s, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse %v into big.Int", src)
+		return fmt.Errorf("cannot parse %v into big.Int", src)
 	}
 	return nil
 }
@@ -153,74 +142,6 @@ func (n *FullName) Value() (driver.Value, error) {
 
 func (n *FullName) Unwrap() *types.FullName {
 	return (*types.FullName)(n)
-}
-
-type M types.M
-
-var _ driver.Valuer = (M)(nil)
-var _ sql.Scanner = (*M)(nil)
-
-func (m *M) Scan(src interface{}) error {
-	if src == nil {
-		return nil
-	}
-
-	b, err := conv.ToBytes(src)
-	if err != nil {
-		return fmt.Errorf("parse bytes: %w", err)
-	}
-
-	if len(b) == 0 {
-		return nil
-	}
-
-	err = json.Unmarshal(b, m)
-	if err != nil {
-		return fmt.Errorf("unmarshal: %w", err)
-	}
-	return nil
-}
-
-func (m M) Value() (driver.Value, error) {
-	return json.Marshal(m)
-}
-
-func (m M) Unwrap() types.M {
-	return (types.M)(m)
-}
-
-type Any types.Any
-
-var _ driver.Valuer = (*Any)(nil)
-var _ sql.Scanner = (*Any)(nil)
-
-func (a *Any) Scan(src interface{}) error {
-	if src == nil {
-		return nil
-	}
-
-	b, err := conv.ToBytes(src)
-	if err != nil {
-		return fmt.Errorf("parse bytes: %w", err)
-	}
-
-	if len(b) == 0 {
-		return nil
-	}
-
-	err = json.Unmarshal(b, a)
-	if err != nil {
-		return fmt.Errorf("unmarshal: %w", err)
-	}
-	return nil
-}
-
-func (a *Any) Value() (driver.Value, error) {
-	return json.Marshal(a)
-}
-
-func (a *Any) Unwrap() *types.Any {
-	return (*types.Any)(a)
 }
 
 type Money types.Money
