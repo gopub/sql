@@ -37,7 +37,7 @@ A simple sql wrapper provides convenient CRUD operations for struct objects.
 
 ## Open database
 
-    	db, err := Open("mysql", "dbuser:dbpassword@tcp(localhost:3306)/dbname")
+    	db, err := NewDBWrapper("mysql", "dbuser:dbpassword@tcp(localhost:3306)/dbname")
     	...
 
 ## Insert
