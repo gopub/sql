@@ -1,11 +1,13 @@
-module github.com/gopub/sql
+module github.com/gopub/sqlx
+
+go 1.14
 
 require (
-	github.com/go-sql-driver/mysql v1.4.0
-	github.com/gopub/log v1.0.6
-	github.com/gopub/mapper v1.0.9
-	github.com/gopub/types v1.7.1
-	github.com/gopub/utils v1.1.4
-	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
-	golang.org/x/image v0.0.0-20180926015637-991ec62608f3 // indirect
+	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gopub/conv v0.3.1
+	github.com/gopub/gox/v2 v2.0.0
+	github.com/gopub/log v1.2.0
+	github.com/gopub/mapper v1.0.10
+	github.com/gopub/types v0.2.0
+	github.com/jinzhu/inflection v1.0.0
 )

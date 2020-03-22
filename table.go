@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/log"
-	"github.com/gopub/utils"
-	"github.com/jinzhu/inflection"
 	"reflect"
 	"strings"
+
+	"github.com/gopub/conv"
+	"github.com/gopub/gox/v2"
+	"github.com/gopub/log"
+	"github.com/jinzhu/inflection"
 )
 
 type tableNaming interface {
@@ -57,7 +59,7 @@ func getTableNameByType(typ reflect.Type) string {
 		//return reflect.Zero(reflect.PtrTo(typ)).Interface().(tableNaming).TableName()
 	}
 
-	return inflection.Plural(utils.CamelToSnake(typ.Name()))
+	return inflection.Plural(conv.ToSnake(typ.Name()))
 }
 
 func isEmpty(jsonData []byte) bool {
@@ -323,13 +325,13 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 	sliceValue := v.Elem()
 	fields := make([]interface{}, len(fi.indexes))
 	for rows.Next() {
-		ptrToElem := utils.DeepNew(elemType)
+		ptrToElem := gox.DeepNew(elemType)
 		elem := ptrToElem.Elem()
 		for i, idx := range fi.indexes {
-			if utils.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
+			if gox.IndexOfString(fi.jsonNames, fi.names[i]) >= 0 {
 				var data []byte
 				fields[i] = &data
-			} else if utils.IndexOfString(fi.nullableNames, fi.names[i]) >= 0 {
+			} else if gox.IndexOfString(fi.nullableNames, fi.names[i]) >= 0 {
 				switch elem.FieldByIndex(idx).Kind() {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -360,7 +362,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 
 		for _, name := range fi.jsonNames {
 			idx := fi.nameToIndex[name]
-			i := utils.IndexOfString(fi.names, name)
+			i := gox.IndexOfString(fi.names, name)
 			addr := fields[i]
 			data := reflect.ValueOf(addr).Elem().Interface()
 			err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
@@ -372,7 +374,7 @@ func (t *Table) Select(records interface{}, where string, args ...interface{}) e
 
 		for _, name := range fi.nullableNames {
 			idx := fi.nameToIndex[name]
-			i := utils.IndexOfString(fi.names, name)
+			i := gox.IndexOfString(fi.names, name)
 			addr := fields[i]
 			switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
 			case sql.NullString:
@@ -413,7 +415,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 	}
 
 	//Store result in ev. If failed, don't change record's value
-	ev := utils.DeepNew(rv.Elem().Type()).Elem()
+	ev := gox.DeepNew(rv.Elem().Type()).Elem()
 	elem := ev
 	if elem.Kind() == reflect.Ptr {
 		elem = elem.Elem()
@@ -442,10 +444,10 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	fieldAddrs := make([]interface{}, len(info.indexes))
 	for i, idx := range info.indexes {
-		if utils.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
+		if gox.IndexOfString(info.jsonNames, info.names[i]) >= 0 {
 			var data []byte
 			fieldAddrs[i] = &data
-		} else if utils.IndexOfString(info.nullableNames, info.names[i]) >= 0 {
+		} else if gox.IndexOfString(info.nullableNames, info.names[i]) >= 0 {
 			switch elem.FieldByIndex(idx).Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -477,7 +479,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	for _, name := range info.jsonNames {
 		idx := info.nameToIndex[name]
-		i := utils.IndexOfString(info.names, name)
+		i := gox.IndexOfString(info.names, name)
 		addr := fieldAddrs[i]
 		data := reflect.ValueOf(addr).Elem().Interface()
 		err = json.Unmarshal(data.([]byte), elem.FieldByIndex(idx).Addr().Interface())
@@ -489,7 +491,7 @@ func (t *Table) SelectOne(record interface{}, where string, args ...interface{})
 
 	for _, name := range info.nullableNames {
 		idx := info.nameToIndex[name]
-		i := utils.IndexOfString(info.names, name)
+		i := gox.IndexOfString(info.names, name)
 		addr := fieldAddrs[i]
 		switch v := reflect.ValueOf(addr).Elem().Interface().(type) {
 		case sql.NullString:
@@ -579,19 +581,19 @@ func (t *Table) Count(where string, args ...interface{}) (int, error) {
 
 func (t *Table) getFieldValueByName(item reflect.Value, info *columnInfo, name string) (interface{}, error) {
 	k := item.FieldByIndex(info.nameToIndex[name]).Interface()
-	if utils.IndexOfString(info.jsonNames, name) >= 0 {
+	if gox.IndexOfString(info.jsonNames, name) >= 0 {
 		data, err := json.Marshal(k)
 		if err != nil {
 			return nil, err
 		}
 
-		if utils.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
+		if gox.IndexOfString(info.nullableNames, name) >= 0 && isEmpty(data) {
 			return nil, nil
 		} else {
 			return data, nil
 		}
 	} else {
-		if utils.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
+		if gox.IndexOfString(info.nullableNames, name) >= 0 && k == reflect.Zero(reflect.TypeOf(k)).Interface() {
 			return nil, nil
 		} else {
 			return k, nil

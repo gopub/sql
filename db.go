@@ -3,8 +3,9 @@ package sqlx
 import (
 	"database/sql"
 	"errors"
-	"github.com/gopub/log"
 	"reflect"
+
+	"github.com/gopub/log"
 )
 
 var ErrNoRows = sql.ErrNoRows

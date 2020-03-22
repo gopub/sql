@@ -1,15 +1,17 @@
 package sqlx_test
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gopub/sql"
-	"github.com/gopub/types"
+	"database/sql"
 	"os"
 	"testing"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gopub/sqlx"
+	"github.com/gopub/types"
 )
 
-var _testDB *sql.DB
+var _testDB *sqlx.DB
 
 type User struct {
 	ID    types.ID `sql:"primary key"`
@@ -53,7 +55,7 @@ func (i Item) TableName() string {
 
 func TestMain(m *testing.M) {
 	var err error
-	_testDB, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/test")
+	_testDB, err = sqlx.Open("mysql", "root:password@tcp(localhost:3306)/test")
 	if err != nil {
 		panic(err)
 	}
@@ -96,7 +98,7 @@ var _testItem = &Item{
 
 func TestDB_Insert(t *testing.T) {
 	u := &User{
-		ID: types.NextID(),
+		ID: types.NewID(),
 	}
 
 	err := _testDB.Insert(u)
@@ -106,7 +108,7 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID: types.NextID(),
+		ID: types.NewID(),
 	}
 
 	err = _testDB.Insert(u)
@@ -116,8 +118,8 @@ func TestDB_Insert(t *testing.T) {
 	}
 
 	u = &User{
-		ID:    types.NextID(),
-		Phone: types.NextID().ShortString(),
+		ID:    types.NewID(),
+		Phone: types.NewID().Short(),
 	}
 
 	err = _testDB.Insert(u)
