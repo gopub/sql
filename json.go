@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gopub/conv"
+	"reflect"
 )
 
 type jsonHolder struct {
@@ -41,5 +42,14 @@ func (j *jsonHolder) Value() (driver.Value, error) {
 }
 
 func JSON(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+	switch val := reflect.ValueOf(v); val.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Array:
+		if val.IsNil() {
+			return nil
+		}
+	}
 	return &jsonHolder{v: v}
 }
