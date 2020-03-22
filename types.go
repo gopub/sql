@@ -320,3 +320,58 @@ func (p *Point) Value() (driver.Value, error) {
 	v := fmt.Sprintf("POINT(%f %f)", p.X, p.Y)
 	return v, nil
 }
+
+type Place types.Place
+
+var _ driver.Valuer = (*Place)(nil)
+var _ sql.Scanner = (*Place)(nil)
+
+func (p *Place) Scan(src interface{}) error {
+	if src == nil {
+		return nil
+	}
+
+	var s string
+	switch v := src.(type) {
+	case string:
+		s = v
+	case []byte:
+		s = string(v)
+	default:
+		return fmt.Errorf("cannot parse %v into string", src)
+	}
+	if s == "" {
+		return nil
+	}
+	fields, err := pg.ParseCompositeFields(s)
+	if err != nil {
+		return fmt.Errorf("parse composite fields %s: %w", s, err)
+	}
+	if len(fields) != 3 {
+		return fmt.Errorf("parse composite fields %s", s)
+	}
+	p.Code = fields[0]
+	p.Name = fields[1]
+	if len(fields[2]) > 0 {
+		p.Location = new(types.Point)
+		if err := (*Point)(p.Location).Scan(fields[2]); err != nil {
+			return fmt.Errorf("scan place.location: %w", err)
+		}
+	}
+	return nil
+}
+
+func (p *Place) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	loc, err := (*Point)(p.Location).Value()
+	if err != nil {
+		return nil, fmt.Errorf("get location value: %w", err)
+	}
+	if locStr, ok := loc.(string); ok {
+		loc = Escape(locStr)
+	}
+	s := fmt.Sprintf("(%s,%s,%s)", Escape(p.Code), Escape(p.Name), loc)
+	return s, nil
+}
