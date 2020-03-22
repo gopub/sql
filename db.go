@@ -92,7 +92,7 @@ func (d *DB) Insert(record interface{}) error {
 	return d.Table(getTableName(record)).Insert(record)
 }
 
-func (d *DB) MultiInsert(values interface{}) error {
+func (d *DB) BatchInsert(values interface{}) error {
 	l := reflect.ValueOf(values)
 	if l.Kind() != reflect.Slice {
 		return errors.New("not slice")
@@ -113,7 +113,7 @@ func (d *DB) Update(record interface{}) error {
 	return d.Table(getTableName(record)).Update(record)
 }
 
-func (d *DB) MultiUpdate(values interface{}) error {
+func (d *DB) BatchUpdate(values interface{}) error {
 	l := reflect.ValueOf(values)
 	if l.Kind() != reflect.Slice {
 		return errors.New("not slice")
