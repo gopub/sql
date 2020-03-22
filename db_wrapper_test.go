@@ -1,4 +1,4 @@
-package sqlx_test
+package sql_test
 
 import (
 	"database/sql"
@@ -7,11 +7,11 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gopub/sqlx"
+	"github.com/gopub/sql"
 	"github.com/gopub/types"
 )
 
-var _testDB *sqlx.DB
+var _testDB *sql.DBWrapper
 
 type User struct {
 	ID    types.ID `sql:"primary key"`
@@ -55,7 +55,7 @@ func (i Item) TableName() string {
 
 func TestMain(m *testing.M) {
 	var err error
-	_testDB, err = sqlx.Open("mysql", "root:password@tcp(localhost:3306)/test")
+	_testDB, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/test")
 	if err != nil {
 		panic(err)
 	}

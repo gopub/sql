@@ -1,4 +1,4 @@
-package sqlx
+package sql
 
 import (
 	"database/sql"
@@ -8,74 +8,72 @@ import (
 	"github.com/gopub/log"
 )
 
-var ErrNoRows = sql.ErrNoRows
-
 var _tableNamingType = reflect.TypeOf((*tableNaming)(nil)).Elem()
 
-type DB struct {
+type DBWrapper struct {
 	db         *sql.DB
 	driverName string
 }
 
 // Open opens database
 // dataSourceName's format: username:password@tcp(host:port)/dbName
-func Open(driverName, dataSourceName string) (*DB, error) {
+func Open(driverName, dataSourceName string) (*DBWrapper, error) {
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &DB{
+	return &DBWrapper{
 		db:         db,
 		driverName: driverName,
 	}, nil
 }
 
-func MustOpen(driverName, dataSourceName string) *DB {
+func MustOpen(driverName, dataSourceName string) *DBWrapper {
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		panic(err)
 	}
 
-	return &DB{
+	return &DBWrapper{
 		db:         db,
 		driverName: driverName,
 	}
 }
 
-func (d *DB) SQLDB() *sql.DB {
+func (d *DBWrapper) DB() *sql.DB {
 	return d.db
 }
 
-func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (d *DBWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
 	log.Debug(query, args)
 	return d.db.Exec(query, args...)
 }
 
-func (d *DB) MustExec(query string, args ...interface{}) {
+func (d *DBWrapper) MustExec(query string, args ...interface{}) {
 	_, err := d.db.Exec(query, args...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DB) Begin() (*Tx, error) {
+func (d *DBWrapper) Begin() (*TxWrapper, error) {
 	tx, err := d.db.Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Tx{
+	return &TxWrapper{
 		tx:         tx,
 		driverName: d.driverName,
 	}, nil
 }
 
-func (d *DB) Close() error {
+func (d *DBWrapper) Close() error {
 	return d.db.Close()
 }
 
-func (d *DB) Table(nameOrRecord interface{}) *Table {
+func (d *DBWrapper) Table(nameOrRecord interface{}) *Table {
 	name, ok := nameOrRecord.(string)
 	if !ok {
 		name = getTableName(nameOrRecord)
@@ -88,11 +86,11 @@ func (d *DB) Table(nameOrRecord interface{}) *Table {
 	}
 }
 
-func (d *DB) Insert(record interface{}) error {
+func (d *DBWrapper) Insert(record interface{}) error {
 	return d.Table(getTableName(record)).Insert(record)
 }
 
-func (d *DB) BatchInsert(values interface{}) error {
+func (d *DBWrapper) BatchInsert(values interface{}) error {
 	l := reflect.ValueOf(values)
 	if l.Kind() != reflect.Slice {
 		return errors.New("not slice")
@@ -109,11 +107,11 @@ func (d *DB) BatchInsert(values interface{}) error {
 	return tx.Commit()
 }
 
-func (d *DB) Update(record interface{}) error {
+func (d *DBWrapper) Update(record interface{}) error {
 	return d.Table(getTableName(record)).Update(record)
 }
 
-func (d *DB) BatchUpdate(values interface{}) error {
+func (d *DBWrapper) BatchUpdate(values interface{}) error {
 	l := reflect.ValueOf(values)
 	if l.Kind() != reflect.Slice {
 		return errors.New("not slice")
@@ -130,11 +128,11 @@ func (d *DB) BatchUpdate(values interface{}) error {
 	return tx.Commit()
 }
 
-func (d *DB) Save(record interface{}) error {
+func (d *DBWrapper) Save(record interface{}) error {
 	return d.Table(getTableName(record)).Save(record)
 }
 
-func (d *DB) MultiSave(values interface{}) error {
+func (d *DBWrapper) MultiSave(values interface{}) error {
 	l := reflect.ValueOf(values)
 	if l.Kind() != reflect.Slice {
 		return errors.New("not slice")
@@ -151,10 +149,10 @@ func (d *DB) MultiSave(values interface{}) error {
 	return tx.Commit()
 }
 
-func (d *DB) Select(records interface{}, where string, args ...interface{}) error {
+func (d *DBWrapper) Select(records interface{}, where string, args ...interface{}) error {
 	return d.Table(getTableNameBySlice(records)).Select(records, where, args...)
 }
 
-func (d *DB) SelectOne(record interface{}, where string, args ...interface{}) error {
+func (d *DBWrapper) SelectOne(record interface{}, where string, args ...interface{}) error {
 	return d.Table(getTableName(record)).SelectOne(record, where, args...)
 }

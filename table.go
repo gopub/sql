@@ -1,4 +1,4 @@
-package sqlx
+package sql
 
 import (
 	"bytes"
@@ -68,7 +68,7 @@ func isEmpty(jsonData []byte) bool {
 }
 
 type Table struct {
-	exe        executor
+	exe        Executor
 	driverName string
 	name       string
 }
@@ -599,4 +599,36 @@ func (t *Table) getFieldValueByName(item reflect.Value, info *columnInfo, name s
 			return k, nil
 		}
 	}
+}
+
+func toReadableArgs(args []interface{}) []interface{} {
+	if log.DebugLevel >= log.GetLevel() {
+		readableArgs := make([]interface{}, len(args))
+		for i, a := range args {
+			if b, ok := a.([]byte); ok {
+				readableArgs[i] = string(b)
+			} else {
+				readableArgs[i] = a
+			}
+		}
+		return readableArgs
+	}
+	return args
+}
+
+func getStructValue(i interface{}) reflect.Value {
+	v := reflect.ValueOf(i)
+	if !v.IsValid() {
+		panic("invalid")
+	}
+
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		panic("not struct: " + v.Kind().String())
+	}
+
+	return v
 }

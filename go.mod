@@ -1,4 +1,4 @@
-module github.com/gopub/sqlx
+module github.com/gopub/sql
 
 go 1.14
 
@@ -10,4 +10,5 @@ require (
 	github.com/gopub/mapper v1.0.10
 	github.com/gopub/types v0.2.0
 	github.com/jinzhu/inflection v1.0.0
+	github.com/stretchr/testify v1.5.1
 )

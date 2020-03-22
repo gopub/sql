@@ -1,4 +1,4 @@
-package sqlx
+package sql
 
 import (
 	"database/sql"
@@ -6,20 +6,20 @@ import (
 	"github.com/gopub/log"
 )
 
-type Tx struct {
+type TxWrapper struct {
 	tx         *sql.Tx
 	driverName string
 }
 
-func (t *Tx) Commit() error {
+func (t *TxWrapper) Commit() error {
 	return t.tx.Commit()
 }
 
-func (t *Tx) Rollback() error {
+func (t *TxWrapper) Rollback() error {
 	return t.tx.Rollback()
 }
 
-func (t *Tx) Table(name string) *Table {
+func (t *TxWrapper) Table(name string) *Table {
 	return &Table{
 		exe:        t.tx,
 		driverName: t.driverName,
@@ -27,27 +27,27 @@ func (t *Tx) Table(name string) *Table {
 	}
 }
 
-func (t *Tx) Insert(record interface{}) error {
+func (t *TxWrapper) Insert(record interface{}) error {
 	return t.Table(getTableName(record)).Insert(record)
 }
 
-func (t *Tx) Update(record interface{}) error {
+func (t *TxWrapper) Update(record interface{}) error {
 	return t.Table(getTableName(record)).Update(record)
 }
 
-func (t *Tx) Save(record interface{}) error {
+func (t *TxWrapper) Save(record interface{}) error {
 	return t.Table(getTableName(record)).Save(record)
 }
 
-func (t *Tx) Select(records interface{}, where string, args ...interface{}) error {
+func (t *TxWrapper) Select(records interface{}, where string, args ...interface{}) error {
 	return t.Table(getTableNameBySlice(records)).Select(records, where, args...)
 }
 
-func (t *Tx) SelectOne(record interface{}, where string, args ...interface{}) error {
+func (t *TxWrapper) SelectOne(record interface{}, where string, args ...interface{}) error {
 	return t.Table(getTableName(record)).SelectOne(record, where, args...)
 }
 
-func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (t *TxWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
 	log.Debug(query, toReadableArgs(args))
 	return t.tx.Exec(query, args...)
 }
