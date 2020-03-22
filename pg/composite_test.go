@@ -3,7 +3,7 @@ package pg_test
 import (
 	"testing"
 
-	"github.com/gopub/sqlx/pg"
+	"github.com/gopub/sql/pg"
 	"github.com/stretchr/testify/require"
 )
 
