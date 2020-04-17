@@ -14,8 +14,10 @@ import (
 
 type BigInt big.Int
 
-var _ driver.Valuer = (*BigInt)(nil)
-var _ sql.Scanner = (*BigInt)(nil)
+var (
+	_ driver.Valuer = (*BigInt)(nil)
+	_ sql.Scanner   = (*BigInt)(nil)
+)
 
 func (i *BigInt) Scan(src interface{}) error {
 	if src == nil {
@@ -47,8 +49,10 @@ func (i *BigInt) Unwrap() *big.Int {
 
 type PhoneNumber types.PhoneNumber
 
-var _ driver.Valuer = (*PhoneNumber)(nil)
-var _ sql.Scanner = (*PhoneNumber)(nil)
+var (
+	_ driver.Valuer = (*PhoneNumber)(nil)
+	_ sql.Scanner   = (*PhoneNumber)(nil)
+)
 
 func (n *PhoneNumber) Scan(src interface{}) error {
 	if src == nil {
@@ -99,8 +103,10 @@ func (n *PhoneNumber) Unwrap() *types.PhoneNumber {
 
 type FullName types.FullName
 
-var _ driver.Valuer = (*FullName)(nil)
-var _ sql.Scanner = (*FullName)(nil)
+var (
+	_ driver.Valuer = (*FullName)(nil)
+	_ sql.Scanner   = (*FullName)(nil)
+)
 
 // Scan implements sql.Scanner
 func (n *FullName) Scan(src interface{}) error {
@@ -146,8 +152,10 @@ func (n *FullName) Unwrap() *types.FullName {
 
 type Money types.Money
 
-var _ driver.Valuer = (*Money)(nil)
-var _ sql.Scanner = (*Money)(nil)
+var (
+	_ driver.Valuer = (*Money)(nil)
+	_ sql.Scanner   = (*Money)(nil)
+)
 
 func (m *Money) Scan(src interface{}) error {
 	if src == nil {
@@ -193,8 +201,10 @@ func (m *Money) Unwrap() *types.Money {
 
 type Point types.Point
 
-var _ driver.Valuer = (*Point)(nil)
-var _ sql.Scanner = (*Point)(nil)
+var (
+	_ driver.Valuer = (*Point)(nil)
+	_ sql.Scanner   = (*Point)(nil)
+)
 
 func (p *Point) Scan(src interface{}) error {
 	if src == nil {
@@ -244,8 +254,10 @@ func (p *Point) Value() (driver.Value, error) {
 
 type Place types.Place
 
-var _ driver.Valuer = (*Place)(nil)
-var _ sql.Scanner = (*Place)(nil)
+var (
+	_ driver.Valuer = (*Place)(nil)
+	_ sql.Scanner   = (*Place)(nil)
+)
 
 func (p *Place) Scan(src interface{}) error {
 	if src == nil {
