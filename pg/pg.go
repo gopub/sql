@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gopub/log"
+	"os/user"
 )
 
 func BuildURL(name, host string, port int, user, password string, sslEnabled bool) string {
@@ -31,4 +32,17 @@ func Open(dbURL string) *sql.DB {
 		log.Panicf("Ping %s: %+v", dbURL, err)
 	}
 	return db
+}
+
+func LocalConnURL() string {
+	u, err := user.Current()
+	if err != nil {
+		log.Errorf("Get current user: %v", err)
+		return ""
+	}
+	return fmt.Sprintf("postgres://%s@localhost:5432/%s?sslmode=disable", u.Username, u.Username)
+}
+
+func OpenLocalDB() *sql.DB {
+	return Open(LocalConnURL())
 }
