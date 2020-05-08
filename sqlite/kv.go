@@ -21,7 +21,7 @@ type KVStore struct {
 	mu    sync.RWMutex
 }
 
-func NewKVRepo(db *sql.DB, clock Clock) *KVStore {
+func NewKVStore(db *sql.DB, clock Clock) *KVStore {
 	r := &KVStore{
 		clock: clock,
 		db:    db,
