@@ -21,7 +21,8 @@ type KVStore struct {
 	mu    sync.RWMutex
 }
 
-func NewKVStore(db *sql.DB, clock Clock) *KVStore {
+func NewKVStore(filename string, clock Clock) *KVStore {
+	db := Open(filename)
 	r := &KVStore{
 		clock: clock,
 		db:    db,
