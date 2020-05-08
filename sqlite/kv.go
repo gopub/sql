@@ -154,3 +154,10 @@ func (r *KVStore) GetJSON(key string, ptrToObj interface{}) error {
 	}
 	return err
 }
+
+func (r *KVStore) Close() error {
+	r.mu.Lock()
+	err := r.db.Close()
+	r.mu.Unlock()
+	return err
+}
