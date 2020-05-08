@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/golang/protobuf v1.3.5
 	github.com/gopub/conv v0.3.1
 	github.com/gopub/gox/v2 v2.0.2
 	github.com/gopub/log v1.2.0
