@@ -15,14 +15,14 @@ type Clock interface {
 	Now() time.Time
 }
 
-type KVRepo struct {
+type KVStore struct {
 	clock Clock
 	db    *sql.DB
 	mu    sync.RWMutex
 }
 
-func NewKVRepo(db *sql.DB, clock Clock) *KVRepo {
-	r := &KVRepo{
+func NewKVRepo(db *sql.DB, clock Clock) *KVStore {
+	r := &KVStore{
 		clock: clock,
 		db:    db,
 	}
@@ -39,7 +39,7 @@ updated_at BIGINT NOT NULL
 	return r
 }
 
-func (r *KVRepo) SaveInt64(key string, val int64) {
+func (r *KVStore) SaveInt64(key string, val int64) {
 	logger := log.With("key", key)
 	r.mu.Lock()
 	_, err := r.db.Exec("REPLACE INTO kv(k,v,updated_at) VALUES(?1,?2,?3)",
@@ -50,7 +50,7 @@ func (r *KVRepo) SaveInt64(key string, val int64) {
 	}
 }
 
-func (r *KVRepo) GetInt64(key string) (int64, error) {
+func (r *KVStore) GetInt64(key string) (int64, error) {
 	var v string
 	r.mu.RLock()
 	err := r.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
@@ -69,7 +69,7 @@ func (r *KVRepo) GetInt64(key string) (int64, error) {
 	return n, nil
 }
 
-func (r *KVRepo) SaveData(key string, data []byte) {
+func (r *KVStore) SaveData(key string, data []byte) {
 	logger := log.With("key", key)
 	r.mu.Lock()
 	_, err := r.db.Exec("REPLACE INTO kv(k,v,updated_at) VALUES(?1,?2,?3)", key, data, r.clock.Now())
@@ -79,7 +79,7 @@ func (r *KVRepo) SaveData(key string, data []byte) {
 	}
 }
 
-func (r *KVRepo) GetData(key string) ([]byte, error) {
+func (r *KVStore) GetData(key string) ([]byte, error) {
 	var v []byte
 	r.mu.RLock()
 	err := r.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
@@ -93,11 +93,11 @@ func (r *KVRepo) GetData(key string) ([]byte, error) {
 	return v, nil
 }
 
-func (r *KVRepo) SaveString(key string, s string) {
+func (r *KVStore) SaveString(key string, s string) {
 	r.SaveData(key, []byte(s))
 }
 
-func (r *KVRepo) GetString(key string) (string, error) {
+func (r *KVStore) GetString(key string) (string, error) {
 	data, err := r.GetData(key)
 	if err != nil {
 		return "", err
@@ -105,7 +105,7 @@ func (r *KVRepo) GetString(key string) (string, error) {
 	return string(data), nil
 }
 
-func (r *KVRepo) SavePB(key string, msg proto.Message) {
+func (r *KVStore) SavePB(key string, msg proto.Message) {
 	logger := log.With("key", key)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -120,7 +120,7 @@ func (r *KVRepo) SavePB(key string, msg proto.Message) {
 	}
 }
 
-func (r *KVRepo) GetPB(key string, msg proto.Message) error {
+func (r *KVStore) GetPB(key string, msg proto.Message) error {
 	var v []byte
 	r.mu.RLock()
 	err := r.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
@@ -134,7 +134,7 @@ func (r *KVRepo) GetPB(key string, msg proto.Message) error {
 	return proto.Unmarshal(v, msg)
 }
 
-func (r *KVRepo) SaveJSON(key string, obj interface{}) {
+func (r *KVStore) SaveJSON(key string, obj interface{}) {
 	logger := log.With("key", key)
 	r.mu.Lock()
 	_, err := r.db.Exec("REPLACE INTO kv(k,v,updated_at) VALUES(?1,?2,?3)", key, sql.JSON(obj), r.clock.Now())
@@ -144,7 +144,7 @@ func (r *KVRepo) SaveJSON(key string, obj interface{}) {
 	}
 }
 
-func (r *KVRepo) GetJSON(key string, ptrToObj interface{}) error {
+func (r *KVStore) GetJSON(key string, ptrToObj interface{}) error {
 	r.mu.RLock()
 	err := r.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(sql.JSON(ptrToObj))
 	r.mu.RUnlock()
