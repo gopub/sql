@@ -5,8 +5,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/conv"
 	"reflect"
+
+	"github.com/gopub/conv"
 )
 
 type jsonHolder struct {

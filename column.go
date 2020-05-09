@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	"github.com/gopub/conv"
-	"github.com/gopub/gox/v2"
 	"github.com/gopub/mapper"
 )
 
@@ -186,7 +185,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 	}
 
 	for _, name := range info.names {
-		if gox.IndexOfString(info.pkNames, name) < 0 {
+		if IndexOfString(info.pkNames, name) < 0 {
 			info.notPKNames = append(info.notPKNames, name)
 		}
 
@@ -195,7 +194,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		}
 	}
 
-	if len(info.aiName) > 0 && (gox.IndexOfString(info.pkNames, info.aiName) != 0 || len(info.pkNames) != 1) {
+	if len(info.aiName) > 0 && (IndexOfString(info.pkNames, info.aiName) != 0 || len(info.pkNames) != 1) {
 		panic("auto_increment must be used with primary key")
 	}
 

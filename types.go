@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/gopub/conv"
 	"github.com/gopub/sql/pg"
 	"github.com/gopub/types"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"strings"
 )
 
 type BigInt big.Int
@@ -124,13 +125,13 @@ func (n *FullName) Scan(src interface{}) error {
 	}
 
 	if !ok || len(s) < 4 {
-		return fmt.Errorf("failed to parse %v into gox.PhoneNumber", src)
+		return fmt.Errorf("failed to parse %v into sql.FullName", src)
 	}
 
 	s = s[1 : len(s)-1]
 	segments := strings.Split(s, ",")
 	if len(segments) != 3 {
-		return fmt.Errorf("failed to parse %v into gox.PhoneNumber", src)
+		return fmt.Errorf("failed to parse %v into sql.FullName", src)
 	}
 
 	n.FirstName, n.MiddleName, n.LastName = segments[0], segments[1], segments[2]

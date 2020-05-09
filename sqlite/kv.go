@@ -2,13 +2,14 @@ package sqlite
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/sql"
 	"github.com/gopub/types"
-	"sync"
-	"time"
 )
 
 type Clock interface {

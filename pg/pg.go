@@ -3,8 +3,9 @@ package pg
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gopub/log"
 	"os/user"
+
+	"github.com/gopub/log"
 )
 
 func BuildURL(name, host string, port int, user, password string, sslEnabled bool) string {
