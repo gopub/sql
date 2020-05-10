@@ -17,6 +17,7 @@ type Clock interface {
 }
 
 type KVStore struct {
+	ID    interface{}
 	clock Clock
 	db    *sql.DB
 	mu    sync.RWMutex
