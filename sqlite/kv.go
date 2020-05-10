@@ -102,8 +102,8 @@ func (s *KVStore) GetData(key string) ([]byte, error) {
 	return v, nil
 }
 
-func (s *KVStore) SaveString(key string, s string) {
-	s.SaveData(key, []byte(s))
+func (s *KVStore) SaveString(key string, str string) {
+	s.SaveData(key, []byte(str))
 }
 
 func (s *KVStore) GetString(key string) (string, error) {
