@@ -8,7 +8,7 @@ require (
 	github.com/gopub/conv v0.3.4
 	github.com/gopub/log v1.2.0
 	github.com/gopub/mapper v1.0.10
-	github.com/gopub/types v0.2.13
+	github.com/gopub/types v0.2.15
 	github.com/jinzhu/inflection v1.0.0
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc
 	github.com/stretchr/testify v1.5.1

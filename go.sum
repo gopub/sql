@@ -80,6 +80,8 @@ github.com/gopub/types v0.2.1/go.mod h1:w97vy765L5eADUMgBz4p+Gj4TTxnh0daS/zf3Rfi
 github.com/gopub/types v0.2.2/go.mod h1:w97vy765L5eADUMgBz4p+Gj4TTxnh0daS/zf3Rfi4Ec=
 github.com/gopub/types v0.2.13 h1:Bjm2TAhBzkrdeip8hmsCcJFrh3wvt/hc8W24N3P5m/w=
 github.com/gopub/types v0.2.13/go.mod h1:9TwnNzanBfFwgtvGMf+wDaBfMRC9V+W1w3IuXmc1lQM=
+github.com/gopub/types v0.2.15 h1:DdWm4vbN6/S0DC4eOMW+kMsFVhdhhOuzt3Xm8+sjKf8=
+github.com/gopub/types v0.2.15/go.mod h1:9TwnNzanBfFwgtvGMf+wDaBfMRC9V+W1w3IuXmc1lQM=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=

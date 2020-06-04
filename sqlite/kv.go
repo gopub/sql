@@ -9,7 +9,6 @@ import (
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/sql"
-	"github.com/gopub/types"
 )
 
 type Clock interface {
@@ -65,9 +64,6 @@ func (s *KVStore) GetInt64(key string) (int64, error) {
 	err := s.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
 	s.mu.RUnlock()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, types.ErrNotExist
-		}
 		return 0, err
 	}
 
@@ -94,9 +90,6 @@ func (s *KVStore) GetData(key string) ([]byte, error) {
 	err := s.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
 	s.mu.RUnlock()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, types.ErrNotExist
-		}
 		return nil, fmt.Errorf("query: %w", err)
 	}
 	return v, nil
@@ -135,9 +128,6 @@ func (s *KVStore) GetPB(key string, msg proto.Message) error {
 	err := s.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(&v)
 	s.mu.RUnlock()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return types.ErrNotExist
-		}
 		return err
 	}
 	return proto.Unmarshal(v, msg)
@@ -157,9 +147,6 @@ func (s *KVStore) GetJSON(key string, ptrToObj interface{}) error {
 	s.mu.RLock()
 	err := s.db.QueryRow("SELECT v FROM kv WHERE k=?", key).Scan(sql.JSON(ptrToObj))
 	s.mu.RUnlock()
-	if err == sql.ErrNoRows {
-		return types.ErrNotExist
-	}
 	return err
 }
 
