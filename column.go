@@ -2,14 +2,15 @@ package sql
 
 import (
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"unsafe"
 
 	"github.com/gopub/conv"
-	"github.com/gopub/mapper"
 )
 
+var _regexpVariable = regexp.MustCompile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 var _bytesType = reflect.TypeOf([]byte(nil))
 var _int64Type = reflect.TypeOf(int64(0))
 var _typeToColumnInfo = &sync.Map{} //type:*columnInfo
@@ -125,7 +126,7 @@ func parseColumnInfo(typ reflect.Type) *columnInfo {
 		if len(tag) > 0 {
 			strs := strings.Split(tag, ",")
 			if len(strs) > 0 {
-				if _, ok := _sqlKeywords[strs[0]]; !ok && mapper.MatchPattern(mapper.PatternVariable, strs[0]) {
+				if _, ok := _sqlKeywords[strs[0]]; !ok && _regexpVariable.MatchString(strs[0]) {
 					name = strs[0]
 				}
 			}
