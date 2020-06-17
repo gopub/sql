@@ -296,7 +296,7 @@ func (p *Place) Scan(src interface{}) error {
 }
 
 func (p *Place) Value() (driver.Value, error) {
-	if p == nil {
+	if p == nil || (p.Code != "" && p.Name != "" && p.Location == nil) {
 		return nil, nil
 	}
 	loc, err := (*Point)(p.Location).Value()
