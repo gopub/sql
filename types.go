@@ -134,7 +134,7 @@ func (n *FullName) Scan(src interface{}) error {
 		return fmt.Errorf("failed to parse %v into sql.FullName", src)
 	}
 
-	n.FirstName, n.MiddleName, n.LastName = segments[0], segments[1], segments[2]
+	n.First, n.Middle, n.Last = segments[0], segments[1], segments[2]
 	return nil
 }
 
@@ -143,7 +143,7 @@ func (n *FullName) Value() (driver.Value, error) {
 	if n == nil {
 		return nil, nil
 	}
-	s := fmt.Sprintf("(%s,%s,%s)", n.FirstName, n.MiddleName, n.LastName)
+	s := fmt.Sprintf("(%s,%s,%s)", n.First, n.Middle, n.Last)
 	return s, nil
 }
 
