@@ -287,21 +287,21 @@ func (p *Place) Scan(src interface{}) error {
 	p.Code = fields[0]
 	p.Name = fields[1]
 	if len(fields[2]) > 0 {
-		p.Location = new(types.Point)
-		if err := (*Point)(p.Location).Scan(fields[2]); err != nil {
-			return fmt.Errorf("scan place.location: %w", err)
+		p.Coordinate = new(types.Point)
+		if err := (*Point)(p.Coordinate).Scan(fields[2]); err != nil {
+			return fmt.Errorf("scan place.Coordinate: %w", err)
 		}
 	}
 	return nil
 }
 
 func (p *Place) Value() (driver.Value, error) {
-	if p == nil || (p.Code != "" && p.Name != "" && p.Location == nil) {
+	if p == nil || (p.Code != "" && p.Name != "" && p.Coordinate == nil) {
 		return nil, nil
 	}
-	loc, err := (*Point)(p.Location).Value()
+	loc, err := (*Point)(p.Coordinate).Value()
 	if err != nil {
-		return nil, fmt.Errorf("get location value: %w", err)
+		return nil, fmt.Errorf("get Coordinate value: %w", err)
 	}
 	if locStr, ok := loc.(string); ok {
 		loc = Escape(locStr)

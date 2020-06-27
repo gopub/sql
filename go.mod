@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/gopub/conv v0.3.19
 	github.com/gopub/log v1.2.2
-	github.com/gopub/types v0.2.20
+	github.com/gopub/types v0.2.22
 	github.com/jinzhu/inflection v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/nyaruka/phonenumbers v1.0.56 // indirect
