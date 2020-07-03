@@ -296,16 +296,19 @@ func (p *Place) Scan(src interface{}) error {
 }
 
 func (p *Place) Value() (driver.Value, error) {
-	if p == nil || (p.Code != "" && p.Name != "" && p.Coordinate == nil) {
+	if p == nil || (p.Code == "" && p.Name == "" && p.Coordinate == nil) {
 		return nil, nil
 	}
 	loc, err := (*Point)(p.Coordinate).Value()
 	if err != nil {
 		return nil, fmt.Errorf("get Coordinate value: %w", err)
 	}
+	var s string
 	if locStr, ok := loc.(string); ok {
 		loc = Escape(locStr)
+		s = fmt.Sprintf("(%s,%s,%s)", Escape(p.Code), Escape(p.Name), loc)
+	} else {
+		s = fmt.Sprintf("(%s,%s,)", Escape(p.Code), Escape(p.Name))
 	}
-	s := fmt.Sprintf("(%s,%s,%s)", Escape(p.Code), Escape(p.Name), loc)
 	return s, nil
 }
