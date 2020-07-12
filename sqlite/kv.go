@@ -135,8 +135,14 @@ func (s *KVStore) GetPB(key string, msg proto.Message) error {
 
 func (s *KVStore) SaveJSON(key string, obj interface{}) {
 	logger := log.With("key", key)
+	v := sql.JSON(obj)
 	s.mu.Lock()
-	_, err := s.db.Exec("REPLACE INTO kv(k,v,updated_at) VALUES(?1,?2,?3)", key, sql.JSON(obj), s.clock.Now())
+	var err error
+	if v == nil {
+		_, err = s.db.Exec("DELETE FROM kv WHERE k=?1", key)
+	} else {
+		_, err = s.db.Exec("REPLACE INTO kv(k,v,updated_at) VALUES(?1,?2,?3)", key, v, s.clock.Now())
+	}
 	s.mu.Unlock()
 	if err != nil {
 		logger.Errorf("%v", err)
