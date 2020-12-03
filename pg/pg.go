@@ -41,7 +41,7 @@ func LocalConnURL() string {
 		log.Errorf("Get current user: %v", err)
 		return ""
 	}
-	return fmt.Sprintf("postgres://%s@localhost:5432/%s?sslmode=disable", u.Username, u.Username)
+	return fmt.Sprintf("postgres:///%s?host=/var/run/postgresql/", u.Username)
 }
 
 func OpenLocalDB() *sql.DB {
