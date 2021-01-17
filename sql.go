@@ -60,11 +60,11 @@ func MustPrepare(db *sql.DB, format string, args ...interface{}) *sql.Stmt {
 
 func ToPlaceholderValue(placeholder string, num int) string {
 	var b strings.Builder
-	for i := 1; i < num; i++ {
-		if i > 0 {
+	for i := 1; i <= num; i++ {
+		if i > 1 {
 			b.WriteString(",")
 		}
-		b.WriteString(fmt.Sprintf("%s%d", placeholder, i+1))
+		b.WriteString(fmt.Sprintf("%s%d", placeholder, i))
 	}
 	return b.String()
 }
