@@ -57,3 +57,19 @@ func MustPrepare(db *sql.DB, format string, args ...interface{}) *sql.Stmt {
 	}
 	return stmt
 }
+
+func ToPlaceholderValue(placeholder string, num int) string {
+	var b strings.Builder
+	for i := 1; i < num; i++ {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		b.WriteString(fmt.Sprintf("%s%d", placeholder, i+1))
+	}
+	return b.String()
+}
+
+func ColumnToPlaceholderValue(column, placeholder string) string {
+	cols := strings.Split(column, ",")
+	return ToPlaceholderValue(placeholder, len(cols))
+}

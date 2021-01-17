@@ -67,13 +67,13 @@ func LocalConnURL(unixSocket bool) string {
 func OpenLocalDB() (*sql.DB, error) {
 	url := LocalConnURL(false)
 	if db, err := Open(LocalConnURL(false)); err == nil {
-		log.Debugf("Connected to %s", url)
+		log.Debugf("Connected via unix socket")
 		return db, nil
 	}
 	url = LocalConnURL(true)
 	db, err := Open(url)
 	if err == nil {
-		log.Debugf("Connected to %s", url)
+		log.Debugf("Connected via tcp socket")
 	}
 	return db, err
 }
