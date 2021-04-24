@@ -31,6 +31,10 @@ func NewKVStore(filename string, clock Clock) *KVStore {
 		filename: filename,
 	}
 
+	if r.clock == nil {
+		r.clock = localClock{}
+	}
+
 	_, err := db.Exec(`
 CREATE TABLE IF NOT EXISTS kv(
 k VARCHAR(255) PRIMARY KEY, 
@@ -161,4 +165,11 @@ func (s *KVStore) Close() error {
 	err := s.db.Close()
 	s.mu.Unlock()
 	return err
+}
+
+type localClock struct {
+}
+
+func (l localClock) Now() time.Time {
+	return time.Now()
 }
